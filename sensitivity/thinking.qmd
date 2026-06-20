@@ -1,0 +1,115 @@
+---
+title: "Sensitivity analysis"
+format: html
+editor: visual
+---
+
+## Aim
+
+The idea was to allow computing the minimal detectable indirect effect for any feasible mediation model. Given that the indirect effect results from multiplication of the component coefficients, the search for all possible combinations of coefficients value would quickly become intractable when the indirect effect is composed by many components, and it is already complex with two components.
+
+## Solutions
+
+The solution to simplify the problem is to select one coefficient involved in the indirect effect and resize it until the required power, given a sample size, is found. The algorithm resizes the selected coefficient — keeping every other coefficient at its specified value — until the power of the indirect effect(s) that travel *through* that coefficient reaches the desired level. When the coefficient lies on more than one indirect path (a shared edge), the search drives the **weakest** of those effects to the target, so that every affected effect reaches *at least* the requested power. Effects that do not pass through the coefficient are left unchanged.
+
+### The balanced solution
+
+Resizing a single coefficient cannot always reach the requested power. The power of an indirect effect, seen as a function of one of its coefficients, is *unimodal*: it rises, reaches a peak, then falls back as the coefficient approaches 1 (the mediator becomes collinear with its predictor and the other coefficients’ standard errors explode). The other coefficients on the path therefore **cap** the achievable power: if the requested power sits above that peak, no value of the single coefficient can deliver it. To give an example, a simple mediation model with $a=.3$ and $N=100$ cannot reach power of .90, because $b=.30$ caps the maximum value to .86.
+
+```{r, warning=FALSE,message=FALSE, results='hide'}
+p<-c()
+ie=c()
+for (b in seq(1:100)/110) {
+  mod<-pamlj::pamlmed(aim="power",a=.3,b=b,sensitivity_coef = "b")
+  p[[length(p)+1]]<-mod$powertab$asDF$power
+  ie[[length(ie)+1]]<-mod$powertab$asDF$es
+}
+```
+
+```{r}
+  plot(ie,p,ylim=c(0,1))
+```
+
+When this happens, `pamlj` switches to a **balanced solution**: instead of moving one coefficient, it grows *all* the coefficients of the path together to a common value, which removes the bottleneck and can reach any power below 1. A message explains what happened, and the solution is recognizable in the table because the `a` and `b` columns of an affected effect become equal (every edge on the path is set to the same value):
+
+## PAMLj
+
+Pamlj implements the algorithm ([see the online help](https://pamlj.github.io/mixed_syntax.html)). First, install the dev version with the new algorithm
+
+```{r, message=FALSE, results=FALSE}
+if (!require("pamlj"))
+   remotes::install_github("pamlj/pamlj",ref="Version.1.1.0")
+
+## let's use the syntax interface (see package vignettes)
+
+models<-"m~.3*x
+         y~.3*b*m+0.01*x
+         test=b"
+
+
+results<-pamlj::pamlmed(aim="es",mode="medmodels",
+                        code=models,
+                        power=.80,
+                        n=100,
+                        inspect_cors=TRUE,
+                        diagram = FALSE)
+```
+```{r}
+results$powertab
+results$powerbyes
+results$implied_cors
+
+```
+
+In this example, given $N=100$ poer of .80, the MDE is .102, corresponding to beta coefficients $a=.3$ and $b=.34$, which means $cor(y,m)=.10$. 
+
+### A more comple example:
+
+```{r, message=FALSE, results=FALSE}
+
+models<-"m1~.3*x+.5*z
+         m2~.3*x+.4*z
+         y~.3*b*m1+0.01*x+.3*m2+.2*z
+         test=b"
+
+
+results<-pamlj::pamlmed(aim="es",mode="medmodels",
+                        code=models,
+                        power=.80,
+                        n=100,
+                        inspect_cors=TRUE,
+                        diagram = FALSE)
+```
+```{r}
+results$powertab
+results$powerbyes
+results$implied_cors
+
+```
+
+## Balanced solution
+
+In this example the balanced solution is used because the "change one - fix others" does not find a solution because we required the sensitivity analysis for power .90.
+
+
+```{r, message=FALSE, results=FALSE}
+
+models<-"m~.3*x
+         y~.3*b*m+0.01*x
+         test=b"
+
+
+results<-pamlj::pamlmed(aim="es",mode="medmodels",
+                        code=models,
+                        power=.90,
+                        n=100,
+                        inspect_cors=TRUE,
+                        diagram = FALSE)
+```
+```{r}
+results$powertab
+results$powerbyes
+results$implied_cors
+
+```
+Because given $a=.30$ there is no value of $b$ that achieves power .90 for $N=100$, the algorithm increased the coefficients all set to the same values ($a=b=0.356$ until it found a solution.
