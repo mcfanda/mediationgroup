@@ -141,7 +141,7 @@ window.Quarto = {
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>p<span class="ot">&lt;-</span><span class="fu">c</span>()</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>ie<span class="ot">=</span><span class="fu">c</span>()</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (b <span class="cf">in</span> <span class="fu">seq</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>)<span class="sc">/</span><span class="dv">110</span>) {</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  mod<span class="ot">&lt;-</span>pamlj<span class="sc">::</span><span class="fu">pamlmed</span>(<span class="at">aim=</span><span class="st">"power"</span>,<span class="at">a=</span>.<span class="dv">3</span>,<span class="at">b=</span>b,<span class="at">sensitivity_coef =</span> <span class="st">"b"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  mod<span class="ot">&lt;-</span>pamlj<span class="sc">::</span><span class="fu">pamlmed</span>(<span class="at">aim=</span><span class="st">"power"</span>,<span class="at">a=</span>.<span class="dv">3</span>,<span class="at">b=</span>b)</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  p[[<span class="fu">length</span>(p)<span class="sc">+</span><span class="dv">1</span>]]<span class="ot">&lt;-</span>mod<span class="sc">$</span>powertab<span class="sc">$</span>asDF<span class="sc">$</span>power</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  ie[[<span class="fu">length</span>(ie)<span class="sc">+</span><span class="dv">1</span>]]<span class="ot">&lt;-</span>mod<span class="sc">$</span>powertab<span class="sc">$</span>asDF<span class="sc">$</span>es</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -156,7 +156,7 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p>When this happens, <code>pamlj</code> switches to a <strong>balanced solution</strong>: instead of moving one coefficient, it grows <em>all</em> the coefficients of the path together to a common value, which removes the bottleneck and can reach any power below 1. A message explains what happened, and the solution is recognizable in the table because the <code>a</code> and <code>b</code> columns of an affected effect become equal (every edge on the path is set to the same value):</p>
+<p>When this happens, <code>pamlj</code> switches to a <strong>balanced solution</strong>: instead of moving one coefficient, it grows <em>all</em> the coefficients of the path together to a common value, which removes the bottleneck and can reach any power below 1.</p>
 </section>
 </section>
 <section id="pamlj" class="level2">
@@ -200,8 +200,8 @@ window.Quarto = {
  ─────────────────────────────────────────────────────────────────────────────────────────── 
    ≤50%               Likely miss               0 &lt; ME ≤ 0.067        0 &lt; b ≤ 0.225          
    50% – 80%          Good chance of missing    0.067 &lt; ME ≤ 0.102    0.225 &lt; b ≤ 0.340      
-   80% – 95%          Probably detect           0.102 &lt; ME ≤ 0.221    0.340 &lt; b ≤ 0.738      
-   ≥95%               Almost surely detect      ME &gt; 0.221            b &gt; 0.738              
+   80% – 95%          Probably detect           0.102 &lt; ME ≤ 0.149    0.340 &lt; b ≤ 0.387      
+   ≥95%               Almost surely detect      ME &gt; 0.149            b &gt; 0.387              
  ─────────────────────────────────────────────────────────────────────────────────────────── 
    Note. Estimated for N=100</code></pre>
 </div>
@@ -212,9 +212,9 @@ window.Quarto = {
  ──────────────────────────────────────────── 
         x            m            y           
  ──────────────────────────────────────────── 
-   x    1.0000000    0.3000000    0.1000000   
-   m    0.3000000    1.0000000    0.3030000   
-   y    0.1000000    0.3030000    1.0000000   
+   x    1.0000000    0.3000000    0.1120000   
+   m    0.3000000    1.0000000    0.3430000   
+   y    0.1120000    0.3430000    1.0000000   
  ──────────────────────────────────────────── </code></pre>
 </div>
 </div>
@@ -258,8 +258,8 @@ window.Quarto = {
  ─────────────────────────────────────────────────────────────────────────────────────────── 
    ≤50%               Likely miss               0 &lt; ME ≤ 0.065        0 &lt; b ≤ 0.215          
    50% – 80%          Good chance of missing    0.065 &lt; ME ≤ 0.089    0.215 &lt; b ≤ 0.297      
-   80% – 95%          Probably detect           0.089 &lt; ME ≤ 0.183    0.297 &lt; b ≤ 0.609      
-   ≥95%               Almost surely detect      ME &gt; 0.183            b &gt; 0.609              
+   80% – 95%          Probably detect           0.089 &lt; ME ≤ 0.128    0.297 &lt; b ≤ 0.358      
+   ≥95%               Almost surely detect      ME &gt; 0.128            b &gt; 0.358              
  ─────────────────────────────────────────────────────────────────────────────────────────── 
    Note. Estimated for N=100</code></pre>
 </div>
@@ -270,11 +270,11 @@ window.Quarto = {
  ─────────────────────────────────────────────────────────────────────── 
          x            z            m1           m2           y           
  ─────────────────────────────────────────────────────────────────────── 
-   x     1.0000000    0.0000000    0.3000000    0.3000000    0.1900000   
-   z     0.0000000    1.0000000    0.5000000    0.4000000    0.4700000   
-   m1    0.3000000    0.5000000    1.0000000    0.2900000    0.4900000   
-   m2    0.3000000    0.4000000    0.2900000    1.0000000    0.4700000   
-   y     0.1900000    0.4700000    0.4900000    0.4700000    1.0000000   
+   x     1.0000000    0.0000000    0.3000000    0.3000000    0.1890000   
+   z     0.0000000    1.0000000    0.5000000    0.4000000    0.4690000   
+   m1    0.3000000    0.5000000    1.0000000    0.2900000    0.4870000   
+   m2    0.3000000    0.4000000    0.2900000    1.0000000    0.4690000   
+   y     0.1890000    0.4690000    0.4870000    0.4690000    1.0000000   
  ─────────────────────────────────────────────────────────────────────── </code></pre>
 </div>
 </div>
@@ -304,11 +304,8 @@ window.Quarto = {
  ────────────────────────────────────────────────────────────────────────────────────────────────────── 
    Effect       N      X-&gt;M (a)     M-&gt;Y (b)     X-&gt;Y (c)      Effect size    Power        α            
  ────────────────────────────────────────────────────────────────────────────────────────────────────── 
-   x → m → y    100    0.3000000    0.7380000    0.01000000      0.2214000    0.8692036    0.05000000   
- ────────────────────────────────────────────────────────────────────────────────────────────────────── 
-   Note. The desired power (0.9) cannot be reached at N = 100: for x → m → y, the largest
-   detectable effect (ME = 0.2214) yields a maximum power of 0.8692. Increase the sample size to
-   reach the desired power.</code></pre>
+   x → m → y    100    0.3561292    0.3561112    0.01000000      0.1268216    0.8999977    0.05000000   
+ ────────────────────────────────────────────────────────────────────────────────────────────────────── </code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>results<span class="sc">$</span>powerbyes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -317,10 +314,10 @@ window.Quarto = {
  ─────────────────────────────────────────────────────────────────────────────────────────── 
    Power to detect    Description               Indirect effect       Coefficient (varied)   
  ─────────────────────────────────────────────────────────────────────────────────────────── 
-   ≤50%               Likely miss               0 &lt; ME ≤ 0.067        0 &lt; b ≤ 0.225          
-   50% – 80%          Good chance of missing    0.067 &lt; ME ≤ 0.102    0.225 &lt; b ≤ 0.340      
-   80% – 95%          Probably detect           0.102 &lt; ME ≤ 0.221    0.340 &lt; b ≤ 0.738      
-   ≥95%               Almost surely detect      ME &gt; 0.221            b &gt; 0.738              
+   ≤50%               Likely miss               0 &lt; ME ≤ 0.077        0 &lt; b ≤ 0.215          
+   50% – 80%          Good chance of missing    0.077 &lt; ME ≤ 0.109    0.215 &lt; b ≤ 0.305      
+   80% – 95%          Probably detect           0.109 &lt; ME ≤ 0.149    0.305 &lt; b ≤ 0.418      
+   ≥95%               Almost surely detect      ME &gt; 0.149            b &gt; 0.418              
  ─────────────────────────────────────────────────────────────────────────────────────────── 
    Note. Estimated for N=100</code></pre>
 </div>
@@ -331,12 +328,13 @@ window.Quarto = {
  ──────────────────────────────────────────── 
         x            m            y           
  ──────────────────────────────────────────── 
-   x    1.0000000    0.3000000    0.1000000   
-   m    0.3000000    1.0000000    0.3030000   
-   y    0.1000000    0.3030000    1.0000000   
+   x    1.0000000    0.3560000    0.1370000   
+   m    0.3560000    1.0000000    0.3600000   
+   y    0.1370000    0.3600000    1.0000000   
  ──────────────────────────────────────────── </code></pre>
 </div>
 </div>
+<p>Because given <span class="math inline">\(a=.30\)</span> there is no value of <span class="math inline">\(b\)</span> that achieves power .90 for <span class="math inline">\(N=100\)</span>, the algorithm increased the coefficients all set to the same values (<span class="math inline">\(a=b=0.356\)</span> until it found a solution.</p>
 </section>
 
 </main>

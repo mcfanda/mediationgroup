@@ -20,7 +20,7 @@ Resizing a single coefficient cannot always reach the requested power. The power
 p<-c()
 ie=c()
 for (b in seq(1:100)/110) {
-  mod<-pamlj::pamlmed(aim="power",a=.3,b=b,sensitivity_coef = "b")
+  mod<-pamlj::pamlmed(aim="power",a=.3,b=b)
   p[[length(p)+1]]<-mod$powertab$asDF$power
   ie[[length(ie)+1]]<-mod$powertab$asDF$es
 }
@@ -30,7 +30,7 @@ for (b in seq(1:100)/110) {
   plot(ie,p,ylim=c(0,1))
 ```
 
-When this happens, `pamlj` switches to a **balanced solution**: instead of moving one coefficient, it grows *all* the coefficients of the path together to a common value, which removes the bottleneck and can reach any power below 1. A message explains what happened, and the solution is recognizable in the table because the `a` and `b` columns of an affected effect become equal (every edge on the path is set to the same value):
+When this happens, `pamlj` switches to a **balanced solution**: instead of moving one coefficient, it grows *all* the coefficients of the path together to a common value, which removes the bottleneck and can reach any power below 1.
 
 ## PAMLj
 
@@ -54,6 +54,7 @@ results<-pamlj::pamlmed(aim="es",mode="medmodels",
                         inspect_cors=TRUE,
                         diagram = FALSE)
 ```
+
 ```{r}
 results$powertab
 results$powerbyes
@@ -61,7 +62,7 @@ results$implied_cors
 
 ```
 
-In this example, given $N=100$ poer of .80, the MDE is .102, corresponding to beta coefficients $a=.3$ and $b=.34$, which means $cor(y,m)=.10$. 
+In this example, given $N=100$ poer of .80, the MDE is .102, corresponding to beta coefficients $a=.3$ and $b=.34$, which means $cor(y,m)=.10$.
 
 ### A more comple example:
 
@@ -80,6 +81,7 @@ results<-pamlj::pamlmed(aim="es",mode="medmodels",
                         inspect_cors=TRUE,
                         diagram = FALSE)
 ```
+
 ```{r}
 results$powertab
 results$powerbyes
@@ -90,7 +92,6 @@ results$implied_cors
 ## Balanced solution
 
 In this example the balanced solution is used because the "change one - fix others" does not find a solution because we required the sensitivity analysis for power .90.
-
 
 ```{r, message=FALSE, results=FALSE}
 
@@ -106,10 +107,12 @@ results<-pamlj::pamlmed(aim="es",mode="medmodels",
                         inspect_cors=TRUE,
                         diagram = FALSE)
 ```
+
 ```{r}
 results$powertab
 results$powerbyes
 results$implied_cors
 
 ```
+
 Because given $a=.30$ there is no value of $b$ that achieves power .90 for $N=100$, the algorithm increased the coefficients all set to the same values ($a=b=0.356$ until it found a solution.
