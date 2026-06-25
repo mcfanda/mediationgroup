@@ -1,0 +1,1271 @@
+---
+title: "Wright Mediation Framework: Effect size metric, Variance Decomposition, and Power/Sensitivity Analysis "
+subtitle: "A Unified Approach for Complex Mediation Designs"
+author: "mediationgourp"
+date: "2026-06-24"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    theme: cosmo
+    highlight-style: github
+---
+
+## 1. Introduction to the Effect Size Metric
+
+### 1.1 The Need for a Standardized Effect Size Metric in Mediation
+
+In structural equation modeling (SEM) and mediation analysis, quantifying the magnitude of an indirect effect relies primarily on the product of standardized path coefficients ($\beta_a \cdot \beta_b$). Although this approach standardizes the effect by expressing it in standard deviation units, the resulting product functions as a metric of relative linear change rather than a bounded proportion of shared variance. Consequently, it does not directly reflect the operational contribution of the mediation pathway to the total variance of the outcome variable. This limitation makes it difficult to evaluate the practical significance of the mechanism within an absolute, variance-accounted-for framework that is directly comparable to traditional effect sizes .
+
+### 1.2 Sewall Wright’s Path Tracing Rules
+
+To establish a formalized effect size, this framework utilizes Sewall Wright’s Path Tracing Rules. Wright established that the total variance of an outcome variable, or the covariance between variables, can be exactly decomposed into the sum of the distinct structural paths connecting them. Following these rules, the total observed variance of the dependent variable ($\sigma^2_Y$) is partitioned into additive components, including direct effects, indirect effects, shared covariances, and residual errors.
+
+### 1.3 The Coefficient of Determination ($R^2$) as an Effect Size
+
+Building upon Wright's decomposition, this framework proposes evaluating the indirect effect as a strict proportion of the outcome's variance. By expressing the structural mechanism as a Coefficient of Determination ($R^2_{\text{indirect}}$), the indirect effect is mapped onto a bounded scalar ranging from $0$ to $1$. This provides a standardized metric representing the specific amount of variance the mediation pathway explains within the final outcome.
+
+------------------------------------------------------------------------
+
+## 2. Theoretical Foundations of $R^2_{\text{indirect}}$
+
+### 2.1 Mathematical Formulation
+
+The `r2_indirect` function calculates the proportion of variance explained by specific indirect paths. For a single mediation model defined by unstandardized path coefficients $a$ and $b$, the variance of the independent variable $\sigma^2_X$, and the variance of the dependent variable $\sigma^2_Y$, the metric is algebraically formulated as:
+
+$$R^2_{\text{indirect}} = \frac{(a \cdot b)^2 \cdot \sigma^2_X}{\sigma^2_Y}$$
+
+### 2.2 Algorithmic Implementation
+
+The custom R function extracts the unstandardized point estimates and the implied covariance matrix directly from a fitted structural model. It computes the squared product of the targeted indirect paths and scales it by the ratio of the predictor's variance to the outcome's variance. To provide a measure of precision and statistical inference, the function utilizes a non-parametric bootstrapping procedure (`n_boot`) to compute 95% Confidence Intervals for the estimated variance proportion.
+
+------------------------------------------------------------------------
+
+## 3. Algebraic Validation of the Metric (`wright_proof`)
+
+To validate the proposed metric algebraically, the framework includes the `wright_proof` suite. This validation ensures that the variance components extracted from the structural paths map accurately onto the theoretically implied variance of the outcome variable, guaranteeing mathematical consistency.
+
+### 3.1 Mathematical Derivation of the 5-Block Decomposition
+
+Consider a simple mediation model defined by the following structural equations, where all variables are expressed as deviations from their means:
+
+$$M = aX + e_M$$ $$Y = c'X + bM + e_Y$$
+
+Under standard ordinary least squares (OLS) and SEM assumptions, the independent variable $X$, the mediator residual $e_M$, and the outcome residual $e_Y$ are mutually independent:
+
+($\text{Cov}(X, e_M) = \text{Cov}(X, e_Y) = \text{Cov}(e_M, e_Y) = 0$)
+
+Substituting the equation for $M$ into the equation for $Y$ isolates the independent sources of variance:
+
+$$Y = c'X + b(aX + e_M) + e_Y$$ $$Y = (c' + ab)X + be_M + e_Y$$
+
+Applying the variance operator ($\text{Var}$) to both sides of the equation yields:
+
+$$\text{Var}(Y) = \text{Var}\left((c' + ab)X\right) + \text{Var}(be_M) + \text{Var}(e_Y)$$
+
+Extracting the constant coefficients from the variance operator results in:
+
+$$\sigma^2_Y = (c' + ab)^2\sigma^2_X + b^2\sigma^2_{eM} + \sigma^2_{eY}$$
+
+Expanding the binomial term $(c' + ab)^2 = (c')^2 + (ab)^2 + 2c'ab$ provides the exact 5-block decomposition implemented in the verification script:
+
+$$\sigma^2_Y = (c')^2\sigma^2_X + (ab)^2\sigma^2_X + 2c'ab\sigma^2_X + b^2\sigma^2_{eM} + \sigma^2_{eY}$$
+
+Where the five distinct components are defined as: 1. **Pure Direct Effect:** $(c')^2 \cdot \sigma^2_X$ 2. **Pure Indirect Effect:** $(a \cdot b)^2 \cdot \sigma^2_X$ 3. **Joint Covariance:** $2 \cdot c' \cdot a \cdot b \cdot \sigma^2_X$ 4. **Independent Mediator Error:** $b^2 \cdot \sigma^2_{eM}$ 5. **Residual Outcome Error:** $\sigma^2_{eY}$
+
+### 3.2 Statistical Justification of the Joint Covariance Term
+
+The inclusion of the third component, $2c'ab\sigma^2_X$, is required by the probability theorem for the variance of the sum of two random variables. For any two random variables $A$ and $B$:
+
+$$\text{Var}(A + B) = \text{Var}(A) + \text{Var}(B) + 2\cdot\text{Cov}(A,B)$$
+
+In this structural context, let $A = c'X$ and $B = abX$. The covariance between these two linear combinations is derived as:
+
+$$\text{Cov}(c'X, abX) = c' \cdot ab \cdot \text{Cov}(X, X) = c'ab\sigma^2_X$$
+
+Therefore, the joint covariance term is an essential algebraic component of the total variance of $Y$. Omitting this term would violate principles of linear algebra and result in an incorrect reconstruction of the observed variance.
+
+### 3.3 Interpretation Under Suppression Conditions
+
+The decomposition accounts for statistical suppression effects through the sign of the Joint Covariance block. When the direct effect ($c'$) and the indirect effect ($a \cdot b$) have opposing signs, the product $c'ab$ is negative, causing the entire joint covariance term to become negative ($2c'ab\sigma^2_X < 0$).
+
+In this scenario, the negative term subtracts from the total implied variance, modeling how the opposing pathways offset one another. To maintain the algebraic equality with the total observed variance $\sigma^2_Y$, the residual outcome error variance ($\sigma^2_{eY}$) must expand. This mathematically reflects the operational reality of suppression designs, where opposing paths reduce the overall explained variance of the model.
+
+### 3.4 Scaling the Decomposition for Complex Models
+
+The algebraic validation scales to accommodate more complex mediation architectures. For instance:
+
+- **Two Parallel Mediators:** The variance of the outcome variable is partitioned into 10 distinct blocks. This structure accounts for the unanalyzed residual covariance between parallel mediators ($2 \cdot b_1 \cdot b_2 \cdot \text{Cov}(e_{M1}, e_{M2})$) and the multi-way joint structural covariances.
+- **Two Serial Mediators:** The structure expands to 15 distinct components, tracking the sequential variance flow through the internal path connecting the mediators ($d_{21}$).
+
+In all configurations, the `wright_proof` function verifies that the final residual error block remains non-negative and that the total decomposed variance precisely matches the observed variance of the outcome. This procedure may be extended to even more complex models.
+
+### 4. R2_indirect
+
+#FUNCTION FOR ESTIMATING SPECIFIC VARIANCE EXPLAINED BY INDIRECT EFFECTS
+
+```{r}
+
+r2_indirect <- function(model_fit, x_var, y_var, ..., n_boot = 500) {
+  
+  # -----------------------------------------------------------------
+  # DEPENDENCY MANAGEMENT
+  # Check if lavaan is loaded; if not, try to load it dynamically.
+  # -----------------------------------------------------------------
+  if (!"package:lavaan" %in% search()) {
+    if (!require("lavaan", character.only = TRUE, quietly = TRUE)) {
+      stop("Error: The 'lavaan' package is required but not installed. Please run install.packages('lavaan') first.")
+    } else {
+      message("Note: 'lavaan' package has been automatically loaded by r2_indirect().")
+    }
+  }
+  
+  # Capture the paths passed directly via ...
+  paths_list <- list(...)
+  num_paths <- length(paths_list)
+  
+  if (num_paths == 0) {
+    stop("Error: Please specify at least one mediation path (e.g., path1 = c('a', 'b')).")
+  }
+  
+  # Internal function for point estimates
+  get_indices <- function(fit) {
+    param <- parameterEstimates(fit)
+    cov_matrix <- lavInspect(fit, "cov.ov")
+    vX <- cov_matrix[x_var, x_var]
+    vY <- cov_matrix[y_var, y_var]
+    
+    product_effects <- numeric(num_paths)
+    
+    for(j in 1:num_paths) {
+      path_labels <- paths_list[[j]]
+      # Extract and multiply the coefficients for the given path
+      coef_values <- sapply(path_labels, function(l) param$est[param$label == l])
+      product_effects[j] <- prod(coef_values)
+    }
+    
+    # Calculate specific R2 indices
+    r2_specific <- (product_effects)^2 * vX / vY
+    
+    # Calculate R2 for the TOTAL MEDIATED EFFECT
+    r2_total <- (sum(product_effects))^2 * vX / vY
+    
+    return(c(r2_specific, r2_total))
+  }
+  
+  # Point estimates on original data
+  point_estimates <- get_indices(model_fit)
+  
+  # Bootstrapping procedure
+  cat("Running Bootstrap on", num_paths, "specific path(s) + Total Mediated Effect...\n")
+  orig_data <- as.data.frame(lavInspect(model_fit, "data"))
+  boot_matrix <- matrix(NA, nrow = n_boot, ncol = num_paths + 1)
+  
+  pb <- txtProgressBar(min = 0, max = n_boot, style = 3)
+  for(i in 1:n_boot) {
+    boot_idx <- sample(1:nrow(orig_data), replace = TRUE)
+    boot_data <- orig_data[boot_idx, ]
+    fit_boot <- try(suppressWarnings(sem(model = model_fit@ParTable, data = boot_data)), silent = TRUE)
+    
+    if(!inherits(fit_boot, "try-error") && lavInspect(fit_boot, "converged")) {
+      boot_matrix[i, ] <- get_indices(fit_boot)
+    }
+    setTxtProgressBar(pb, i)
+  }
+  close(pb)
+  
+  # Clean NA rows (non-converged bootstraps)
+  boot_matrix <- na.omit(boot_matrix)
+  
+  # 95% Confidence Intervals
+  ci_low <- apply(boot_matrix, 2, quantile, probs = 0.025)
+  ci_high <- apply(boot_matrix, 2, quantile, probs = 0.975)
+  
+  # Format output names nicely based on user input
+  path_names <- names(paths_list)
+  if (is.null(path_names)) {
+    path_names <- paste0("Path_", 1:num_paths, " [", sapply(paths_list, paste, collapse="*"), "]")
+  } else {
+    empty_names <- path_names == ""
+    path_names[empty_names] <- paste0("Path_", which(empty_names))
+    path_names <- paste0(path_names, " [", sapply(paths_list, paste, collapse="*"), "]")
+  }
+  
+  effect_names <- c(path_names, "Total Mediated Effect")
+  
+  # Build final dataframe
+  final_report <- data.frame(
+    Effect = effect_names,
+    r2_indirect = round(point_estimates, 5),
+    CI_Low = round(ci_low, 5),
+    CI_High = round(ci_high, 5),
+    Perc = paste0(round(point_estimates * 100, 2), "%"),
+    CI_Low_P = paste0(round(ci_low * 100, 2), "%"),
+    CI_High_P = paste0(round(ci_high * 100, 2), "%")
+  )
+  
+  return(final_report)
+}
+```
+
+EXAMPLE OF USAGE:
+
+################################################################################ 
+
+###Function usage example! don't run!
+
+results \<- r2_indirect(model_fit = lavaan.mod.fit, x_var = "X", y_var = "Y", ###User defined paths (Specify any type of indirect association as defined in the fitted lavaan model)### Single = c("path_a", "path_b"), Parallel1 = c("path_a1", "path_b1"), Parallel2 = c("path_a2", "path_b2"), Serial = c("path_a", "path_b", "path_d"), n_boot = 500)
+
+print(results, row.names = FALSE) \###################################################################
+
+### 4.1. APPLYNG THE FUNCTION TO DIFFERENT MEDIATION MODELS
+
+### 4.1.1. Single Mediator Models
+
+```{r}
+
+# ==============================================================================
+# DATA GENERATION: SINGLE MEDIATOR
+# ==============================================================================
+simulate_data_single <- function(N, a, b, cp, seed = 123) {
+  set.seed(seed)
+  
+  X  <- rnorm(N, mean = 0, sd = 1)
+  
+  # Mediator with residual variance = 1
+  eM <- rnorm(N, mean = 0, sd = 1)
+  M  <- a * X + eM
+  
+  # Outcome with residual variance = 1
+  eY <- rnorm(N, mean = 0, sd = 1)
+  Y  <- cp * X + b * M + eY
+  
+  return(data.frame(X = X, M = M, Y = Y))
+}
+
+# ---------------------------------------------------------------------
+# Creation of the  Datasets
+# ---------------------------------------------------------------------
+
+# Dataset 1: N = 400 (Moderate positive effects)
+df1 <- simulate_data_single(N = 400, a = 0.5, b = 0.5, cp = 0.4)
+
+# Dataset 2: N = 500 (Strong positive effects)
+df2 <- simulate_data_single(N = 500, a = 0.7, b = 0.6, cp = 0.3)
+
+# Dataset 3: N = 600 (Mixed positive effects)
+df3 <- simulate_data_single(N = 600, a = 0.4, b = 0.8, cp = 0.5)
+
+# Dataset 4: N = 600 (TYPE 1 SUPPRESSION EFFECT: DIRECT NEGATIVE VS. INDIRECT POSITIVE)
+# X depresses Y (negative cp), but the mediator increases Y
+df4 <- simulate_data_single(N = 600, a = 0.6, b = 0.6, cp = -0.7)
+
+# Dataset 4: N = 600 (TYPE 2 SUPPRESSION EFFECT: DIRECT POSITIVE VS. INDIRECT NEGATIVE)
+# M depresses Y (negative ind effect), but the mediator increases Y
+df5 <- simulate_data_single(N = 600, a = 0.6, b = -0.6, cp = 0.7)
+
+
+# ==============================================================================
+# LAVAAN MODEL DEFINITION
+# ==============================================================================
+# Load the required package
+library(lavaan)
+
+mod_simple <- "
+
+# Paths
+M ~ a * X
+Y ~ cp * X + b * M
+
+#Indirect effect
+ind := a*b
+
+"
+
+fit1 <- sem(mod_simple, estimator = "MLR", data = df1)
+fit2 <- sem(mod_simple, estimator = "MLR", data = df2)
+fit3 <- sem(mod_simple, estimator = "MLR", data = df3)
+fit4 <- sem(mod_simple, estimator = "MLR", data = df4)
+fit5 <- sem(mod_simple, estimator = "MLR", data = df5)
+
+summary(fit1, standardized = TRUE)
+summary(fit2, standardized = TRUE)
+summary(fit3, standardized = TRUE)
+summary(fit4, standardized = TRUE)
+summary(fit5, standardized = TRUE)
+
+
+# ==============================================================================
+# RUNNING r2_indirect ON RAW COEFFICIENTS (UNSTANDARDIZED b) SINGLE MEDIATOR
+# ==============================================================================
+
+cat("\n=== LAUNCHING r2_indirect ON RAW UNSTANDARDIZED DATA ===\n")
+res_df1 <- r2_indirect(fit1, x_var = "X", y_var = "Y", Med_Path = c("a", "b"), n_boot = 200)
+res_df2 <- r2_indirect(fit2, x_var = "X", y_var = "Y", Med_Path = c("a", "b"), n_boot = 200)
+res_df3 <- r2_indirect(fit3, x_var = "X", y_var = "Y", Med_Path = c("a", "b"), n_boot = 200)
+res_df4 <- r2_indirect(fit4, x_var = "X", y_var = "Y", Med_Path = c("a", "b"), n_boot = 200)
+res_df5 <- r2_indirect(fit5, x_var = "X", y_var = "Y", Med_Path = c("a", "b"), n_boot = 200)
+
+cat("\n--> FUNCTION REPORT: DATASET 1 (N = 400)\n")
+print(res_df1, row.names = FALSE)
+
+cat("\n--> FUNCTION REPORT: DATASET 2 (N = 500)\n")
+print(res_df2, row.names = FALSE)
+
+cat("\n--> FUNCTION REPORT: DATASET 3 (N = 600)\n")
+print(res_df3, row.names = FALSE)
+
+cat("\n--> FUNCTION REPORT: DATASET 4 (TYPE 1 SUPPRESSION, N = 600)\n")
+print(res_df4, row.names = FALSE)
+
+cat("\n--> FUNCTION REPORT: DATASET 4 (TYPE 2 SUPPRESSION, N = 600)\n")
+print(res_df5, row.names = FALSE)
+
+# ==============================================================================
+# METHODOLOGICAL CHECK: WRIGHT'S DECOMPOSITION FOR SINGLE MEDIATOR (5 BLOCKS)
+# ==============================================================================
+
+wright_proof_single <- function(model_fit, dataset_name = "Dataset") {
+  
+  # 1. Extract raw parameter estimates from the fitted model
+  est <- parameterEstimates(model_fit)
+  
+  a_est  <- est$est[est$label == "a"]
+  b_est  <- est$est[est$label == "b"]
+  cp_est <- est$est[est$label == "cp"]
+  
+  # Extract residual variances (e_M and e_Y)
+  var_eM <- est$est[est$op == "~~" & est$lhs == "M" & est$rhs == "M"]
+  var_eY <- est$est[est$op == "~~" & est$lhs == "Y" & est$rhs == "Y"]
+  
+  # Extract observed variances from the sample covariance matrix (Fixed X and Y)
+  cov_mat <- lavInspect(model_fit, "cov.ov")
+  var_X   <- cov_mat["X", "X"]
+  var_Y   <- cov_mat["Y", "Y"]
+  
+  # 2. Calculate the 5 components in RAW METRIC
+  B1_Raw <- (cp_est)^2 * var_X
+  B2_Raw <- (a_est * b_est)^2 * var_X
+  B3_Raw <- 2 * cp_est * a_est * b_est * var_X
+  B4_Raw <- (b_est)^2 * var_eM
+  B5_Raw <- var_eY
+  
+  Total_Raw <- B1_Raw + B2_Raw + B3_Raw + B4_Raw + B5_Raw
+  
+  # 3. Calculate PROPORTIONS and PERCENTAGES
+  P1 <- B1_Raw / var_Y; P2 <- B2_Raw / var_Y; P3 <- B3_Raw / var_Y
+  P4 <- B4_Raw / var_Y; P5 <- B5_Raw / var_Y
+  
+  Total_Prop <- P1 + P2 + P3 + P4 + P5
+  
+  # --- PRINTING THE COMPREHENSIVE MATHEMATICAL CHECK REPORT ---
+  cat("\n===========================================================================\n")
+  cat(" WRIGHT DECOMPOSITION PROOF (SINGLE):", dataset_name, "\n")
+  cat("===========================================================================\n")
+  cat(sprintf(" Observed Variance of Y (Denominator) : %10.5f\n", var_Y))
+  cat(sprintf(" Implied Variance of Y (Reconstructed): %10.5f\n", Total_Raw))
+  cat(sprintf(" Discrepancy (Reconstruction Error)   : %10.5f\n", var_Y - Total_Raw))
+  cat("---------------------------------------------------------------------------\n")
+  cat(sprintf(" %-38s | %-10s | %-10s | %-10s\n", "COMPONENT", "RAW VAR", "PROPORTION", "PERCENT"))
+  cat("---------------------------------------------------------------------------\n")
+  cat(sprintf(" 1. Pure Direct Effect (cp^2)           | %10.5f | %10.5f | %8.2f %%\n", B1_Raw, P1, P1*100))
+  cat(sprintf(" 2. Pure Indirect Effect ((ab)^2)       | %10.5f | %10.5f | %8.2f %%\n", B2_Raw, P2, P2*100))
+  cat(sprintf(" 3. Wright Joint Cov (2*cp*a*b)         | %10.5f | %10.5f | %8.2f %%\n", B3_Raw, P3, P3*100))
+  cat(sprintf(" 4. Independent M Variance (b^2*eM)     | %10.5f | %10.5f | %8.2f %%\n", B4_Raw, P4, P4*100))
+  cat(sprintf(" 5. Y Residual/Error Variance (eY)      | %10.5f | %10.5f | %8.2f %%\n", B5_Raw, P5, P5*100))
+  cat("---------------------------------------------------------------------------\n")
+  cat(sprintf(" %-38s | %10.5f | %10.5f | %8.2f %%\n", "TOTAL CHECK", Total_Raw, Total_Prop, Total_Prop*100))
+  cat("===========================================================================\n")
+}
+
+# ==============================================================================
+# EXECUTE PROOF ON THE FITTED MODELS
+# ==============================================================================
+# Assuming models are already estimated in lavaan using raw data:
+wright_proof_single(fit1, dataset_name = "Dataset 1 (N = 400)")
+wright_proof_single(fit2, dataset_name = "Dataset 2 (N = 500)")
+wright_proof_single(fit3, dataset_name = "Dataset 3 (N = 600)")
+wright_proof_single(fit4, dataset_name = "Dataset 4 (TYPE 1 SUPPRESSION, N = 600)")
+wright_proof_single(fit4, dataset_name = "Dataset 4 (TYPE 2 SUPPRESSION, N = 600)")
+################################################################################
+```
+
+### 4.1.2. Two Parallel Mediators Models
+
+```{r}
+# ==============================================================================
+# DATA GENERATION: PARALLEL MEDIATORS
+# ==============================================================================
+
+simulate_data_parallel <- function(N, a1, b1, a2, b2, cp, res_cov, seed = 123) {
+  set.seed(seed)
+  X <- rnorm(N, mean = 0, sd = 1)
+  
+  # Inject a shared unobserved variance component (creates residual covariance)
+  shared_residual <- rnorm(N, mean = 0, sd = sqrt(res_cov))
+  
+  M1 <- a1 * X + shared_residual + rnorm(N, mean = 0, sd = sqrt(0.64 - res_cov))
+  M2 <- a2 * X + shared_residual + rnorm(N, mean = 0, sd = sqrt(0.64 - res_cov))
+  
+  Y <- cp * X + b1 * M1 + b2 * M2 + rnorm(N, mean = 0, sd = 0.5)
+  
+  return(data.frame(X = X, M1 = M1, M2 = M2, Y = Y))
+}
+
+# ---------------------------------------------------------------------
+# Creation of the  Datasets
+# ---------------------------------------------------------------------
+
+# Dataset 1: N = 600, Standard (All positive cooperative effects)
+dfp1 <- simulate_data_parallel(N = 600, 
+                               a1 = 0.4, b1 = 0.3, 
+                               a2 = 0.3, b2 = 0.4, 
+                               cp = 0.3, res_cov = 0.25, seed = 111)
+
+# Dataset 2: N = 700, Standard (All positive cooperative effects)
+dfp2 <- simulate_data_parallel(N = 700, 
+                               a1 = 0.5, b1 = 0.25, 
+                               a2 = 0.4, b2 = 0.3, 
+                               cp = 0.35, res_cov = 0.20, seed = 222)
+
+# Dataset 3: N = 700, Type 1 Suppression (Direct Positive vs. M1 (indirect) Negative)
+dfp3 <- simulate_data_parallel(N = 700, 
+                               a1 = 0.4, b1 = -0.4, 
+                               a2 = 0.3, b2 = 0.3, 
+                               cp = 0.4, res_cov = 0.30, seed = 333)
+
+# Dataset 4: N = 700, Type 2 Suppression (Direct Positive vs. M1 & M2 (indirects) Negative)
+dfp4 <- simulate_data_parallel(N = 700, 
+                               a1 = 0.4, b1 = -0.4, 
+                               a2 = -0.3, b2 = 0.4, 
+                               cp = 0.5, res_cov = 0.28, seed = 444)
+
+# Dataset 5: N = 700, Type 3 Suppression (Direct Negative vs. M1 & M2 (indirects) Positive)
+dfp5 <- simulate_data_parallel(N = 700, 
+                               a1 = 0.4, b1 = 0.4, 
+                               a2 = 0.3, b2 = 0.4, 
+                               cp = -0.5, res_cov = 0.28, seed = 444)
+
+# ==============================================================================
+# LAVAAN MODEL MODEL DEFINITION (df = 0)
+# ==============================================================================
+# Load the required package
+library(lavaan)
+
+parallel_model <- "
+M1 ~ a1*X
+M2 ~ a2*X
+Y  ~ cp*X + b1*M1 + b2*M2
+  
+#Residual covariance for perfect identification (df=0)
+  M1 ~~ M2
+  
+#Indirect effects
+indM1 := a1*b1
+indM2 := a2*b2
+"
+
+fitp1 <- sem(parallel_model, estimator = "MLR", data = dfp1)
+fitp2 <- sem(parallel_model, estimator = "MLR", data = dfp2)
+fitp3 <- sem(parallel_model, estimator = "MLR", data = dfp3)
+fitp4 <- sem(parallel_model, estimator = "MLR", data = dfp4)
+fitp5 <- sem(parallel_model, estimator = "MLR", data = dfp5)
+
+summary(fitp1, standardized = TRUE)
+summary(fitp2, standardized = TRUE)
+summary(fitp3, standardized = TRUE)
+summary(fitp4, standardized = TRUE)
+summary(fitp5, standardized = TRUE)
+
+
+# ==================================================================================
+# RUNNING r2_indirect ON RAW COEFFICIENTS (UNSTANDARDIZED b) TWO PARALLEL MEDIATORS
+# ==================================================================================
+
+cat("\n=== LAUNCHING r2_indirect ON RAW UNSTANDARDIZED DATA ===\n")
+res_dfp1 <- r2_indirect(fitp1, 
+                        x_var = "X", 
+                        y_var = "Y", 
+                        Med_Path1 = c("a1", "b1"),
+                        Med_Path2 = c("a2", "b2"),
+                        n_boot = 200)
+
+res_dfp2 <- r2_indirect(fitp2, 
+                        x_var = "X", 
+                        y_var = "Y", 
+                        Med_Path1 = c("a1", "b1"),
+                        Med_Path2 = c("a2", "b2"),
+                        n_boot = 200)
+
+res_dfp3 <- r2_indirect(fitp3,  
+                        x_var = "X", 
+                        y_var = "Y", 
+                        Med_Path1 = c("a1", "b1"),
+                        Med_Path2 = c("a2", "b2"),
+                        n_boot = 200)
+
+res_dfp4 <- r2_indirect(fitp4, 
+                        x_var = "X", 
+                        y_var = "Y", 
+                        Med_Path1 = c("a1", "b1"),
+                        Med_Path2 = c("a2", "b2"),
+                        n_boot = 200)
+
+res_dfp5 <- r2_indirect(fitp5, 
+                        x_var = "X", 
+                        y_var = "Y", 
+                        Med_Path1 = c("a1", "b1"),
+                        Med_Path2 = c("a2", "b2"),
+                        n_boot = 200)
+
+cat("\n--> FUNCTION REPORT: DATASET 1 (STANDARD, N = 600)\n")
+print(res_dfp1, row.names = FALSE)
+
+cat("\n--> FUNCTION REPORT: DATASET 2 (STANDARD, N = 700)\n")
+print(res_dfp2, row.names = FALSE)
+
+cat("\n--> FUNCTION REPORT: DATASET 3 (TYPE 1 SUPPRESSION, N = 700)\n")
+print(res_dfp3, row.names = FALSE)
+
+cat("\n--> FUNCTION REPORT: DATASET 4 (TYPE 2 SUPPRESSION, N = 700)\n")
+print(res_dfp4, row.names = FALSE)
+
+cat("\n--> FUNCTION REPORT: DATASET 5 (TYPE 3 SUPPRESSION, N = 700)\n")
+print(res_dfp5, row.names = FALSE)
+
+
+# ===============================================================================
+# METHODOLOGICAL CHECK: WRIGHT'S DECOMPOSITION FOR PARALLEL MEDIATORS (10 BLOCKS)
+# ===============================================================================
+wright_proof_parallel <- function(model_fit, dataset_name = "Dataset") {
+  
+  est <- parameterEstimates(model_fit)
+  
+  # Regressions
+  a1_est <- est$est[est$label == "a1"]
+  b1_est <- est$est[est$label == "b1"]
+  a2_est <- est$est[est$label == "a2"]
+  b2_est <- est$est[est$label == "b2"]
+  cp_est <- est$est[est$label == "cp"]
+  
+  # Residual Variances
+  var_eM1 <- est$est[est$op == "~~" & est$lhs == "M1" & est$rhs == "M1"]
+  var_eM2 <- est$est[est$op == "~~" & est$lhs == "M2" & est$rhs == "M2"]
+  var_eY  <- est$est[est$op == "~~" & est$lhs == "Y"  & est$rhs == "Y"]
+  
+  # Residual Covariance of parallel mediators 
+  cov_eM12_est <- est$est[est$op == "~~" & 
+                            ((est$lhs == "M1" & est$rhs == "M2") | 
+                               (est$lhs == "M2" & est$rhs == "M1"))]
+  
+  # Matrix Sample Variances
+  cov_mat <- lavInspect(model_fit, "cov.ov")
+  var_X   <- cov_mat["X", "X"]
+  var_Y   <- cov_mat["Y", "Y"]
+  
+  # Compute the 10 Raw Components
+  B1_Raw <- (cp_est)^2 * var_X
+  B2_Raw <- (a1_est * b1_est)^2 * var_X
+  B3_Raw <- (a2_est * b2_est)^2 * var_X
+  B4_Raw <- 2 * cp_est * a1_est * b1_est * var_X
+  B5_Raw <- 2 * cp_est * a2_est * b2_est * var_X
+  B6_Raw <- 2 * (a1_est * b1_est) * (a2_est * b2_est) * var_X
+  B7_Raw <- (b1_est)^2 * var_eM1
+  B8_Raw <- (b2_est)^2 * var_eM2
+  B9_Raw <- 2 * b1_est * b2_est * cov_eM12_est
+  B10_Raw <- var_eY
+  
+  Total_Raw <- B1_Raw + B2_Raw + B3_Raw + B4_Raw + B5_Raw + B6_Raw + B7_Raw + B8_Raw + B9_Raw + B10_Raw
+  
+  # Proportions
+  P1 <- B1_Raw / var_Y; P2 <- B2_Raw / var_Y; P3 <- B3_Raw / var_Y
+  P4 <- B4_Raw / var_Y; P5 <- B5_Raw / var_Y; P6 <- B6_Raw / var_Y
+  P7 <- B7_Raw / var_Y; P8 <- B8_Raw / var_Y; P9 <- B9_Raw / var_Y; P10 <- B10_Raw / var_Y
+  
+  Total_Prop <- P1 + P2 + P3 + P4 + P5 + P6 + P7 + P8 + P9 + P10
+  
+  # --- PRINTING THE COMPREHENSIVE MATHEMATICAL CHECK REPORT ---
+  cat("\n===========================================================================\n")
+  cat(" WRIGHT DECOMPOSITION PROOF (PARALLEL):", dataset_name, "\n")
+  cat("===========================================================================\n")
+  cat(sprintf(" Observed Variance of Y (Denominator) : %10.5f\n", var_Y))
+  cat(sprintf(" Implied Variance of Y (Reconstructed): %10.5f\n", Total_Raw))
+  cat(sprintf(" Discrepancy (Reconstruction Error)   : %10.5f\n", var_Y - Total_Raw))
+  cat("---------------------------------------------------------------------------\n")
+  cat(sprintf(" %-38s | %-10s | %-10s | %-10s\n", "COMPONENT", "RAW VAR", "PROPORTION", "PERCENT"))
+  cat("---------------------------------------------------------------------------\n")
+  cat(sprintf("  1. Pure Direct Effect (cp^2)          | %10.5f | %10.5f | %8.2f %%\n", B1_Raw, P1, P1*100))
+  cat(sprintf("  2. Pure Indirect M1 ((a1*b1)^2)       | %10.5f | %10.5f | %8.2f %%\n", B2_Raw, P2, P2*100))
+  cat(sprintf("  3. Pure Indirect M2 ((a2*b2)^2)       | %10.5f | %10.5f | %8.2f %%\n", B3_Raw, P3, P3*100))
+  cat(sprintf("  4. Wright Joint Cov (2*cp*a1*b1)      | %10.5f | %10.5f | %8.2f %%\n", B4_Raw, P4, P4*100))
+  cat(sprintf("  5. Wright Joint Cov (2*cp*a2*b2)      | %10.5f | %10.5f | %8.2f %%\n", B5_Raw, P5, P5*100))
+  cat(sprintf("  6. Wright Joint Cov (2*a1*b1*a2*b2)   | %10.5f | %10.5f | %8.2f %%\n", B6_Raw, P6, P6*100))
+  cat(sprintf("  7. Independent M1 Error (b1^2*eM1)    | %10.5f | %10.5f | %8.2f %%\n", B7_Raw, P7, P7*100))
+  cat(sprintf("  8. Independent M2 Error (b2^2*eM2)    | %10.5f | %10.5f | %8.2f %%\n", B8_Raw, P8, P8*100))
+  cat(sprintf("  9. Residual Joint Cov (2*b1*b2*cov)   | %10.5f | %10.5f | %8.2f %%\n", B9_Raw, P9, P9*100))
+  cat(sprintf(" 10. Y Residual/Error Var (eY)          | %10.5f | %10.5f | %8.2f %%\n", B10_Raw, P10, P10*100))
+  cat("---------------------------------------------------------------------------\n")
+  cat(sprintf(" %-38s | %10.5f | %10.5f | %8.2f %%\n", "TOTAL CHECK", Total_Raw, Total_Prop, Total_Prop*100))
+  cat("===========================================================================\n")
+}
+
+# ==============================================================================
+# EXECUTE PROOF ON THE FITTED MODELS
+# ==============================================================================
+# Assuming models are already estimated in lavaan using raw data:
+wright_proof_parallel(fitp1, "Dataset 1 (N=600, Standard)")
+wright_proof_parallel(fitp2, "Dataset 2 (N=700, Standard)")
+wright_proof_parallel(fitp3, "Dataset 3 (N=700, Type 1 Suppression)")
+wright_proof_parallel(fitp4, "Dataset 4 (N=700, Type 2 Suppression)")
+wright_proof_parallel(fitp5, "Dataset 5 (N=700, Type 3 Suppression)")
+################################################################################
+
+```
+
+### 4.1.3. Serial Mediators Models
+
+```{r}
+# ==============================================================================
+# DATA GENERATION: SERIAL MEDIATORS
+# ==============================================================================
+
+generate_serial_data <- function(N, a1, a2, d21, b1, b2, cp, seed = 17) {
+  set.seed(seed)
+  
+  # Generating the independent variable X
+  X <- rnorm(N, mean = 0, sd = 1)
+  
+  # Eq 1: M1 depends only on X
+  e_M1 <- rnorm(N, mean = 0, sd = 1)
+  M1 <- (a1 * X) + e_M1
+  
+  # Eq 2: M2 depends on X and M1 (Serial Path d21)
+  e_M2 <- rnorm(N, mean = 0, sd = 1)
+  M2 <- (a2 * X) + (d21 * M1) + e_M2
+  
+  # Eq 3: Y depends on X, M1 and M2
+  e_Y <- rnorm(N, mean = 0, sd = 1)
+  Y <- (cp * X) + (b1 * M1) + (b2 * M2) + e_Y
+  
+  return(data.frame(X, M1, M2, Y))
+}
+
+# ---------------------------------------------------------------------
+# Creation of the  Datasets
+# ---------------------------------------------------------------------
+
+# Dataset 1: N = 600, Standard (All positive cooperative effects)
+dfs1 <- generate_serial_data(N = 600, 
+                             a1 = 0.5, a2 = 0.4, d21 = 0.5, 
+                             b1 = 0.4, b2 = 0.5, cp = 0.3, 
+                             seed = 101)  
+
+# Dataset 2: N = 700, Standard (All positive, unbalanced weights on the serial path)
+dfs2 <- generate_serial_data(N = 700, 
+                             a1 = 0.6, a2 = 0.2, d21 = 0.6, 
+                             b1 = 0.2, b2 = 0.5, cp = 0.4, 
+                             seed = 102)        
+
+# Dataset 3: N = 700, Type 1 Suppression (Direct Positive vs. M1 & Serial Negative)
+dfs3 <- generate_serial_data(N = 700, 
+                             a1 = 0.6, a2 = 0.2, d21 = 0.5, 
+                             b1 = -0.5, b2 = 0.6, cp = 0.6, 
+                             seed = 103)       
+
+# Dataset 4: N = 700, Type 2 Suppression (Direct Positive vs. M2 & Serial Negative)
+dfs4 <- generate_serial_data(N = 700, 
+                             a1 = 0.6, a2 = 0.5, d21 = 0.4, 
+                             b1 = 0.5, b2 = -0.6, cp = 0.2, 
+                             seed = 104)       
+
+# Dataset 5: N = 700, Type 3 Suppression (Direct, M1, M2, Positive vs. Serial Negative)
+dfs5 <- generate_serial_data(N = 700, 
+                             a1 = 0.6, a2 = 0.3, d21 = -0.7, 
+                             b1 = 0.4, b2 = 0.5, cp = 0.5, 
+                             seed = 105)      
+
+# Dataset 5: N = 700, Type 4 Suppression (Direct, M1, M2, Positive vs. Serial Negative)
+dfs6 <- generate_serial_data(N = 700, 
+                             a1 = 0.6, a2 = 0.3, d21 = 0.7, 
+                             b1 = 0.4, b2 = 0.5, cp = -0.5, 
+                             seed = 105)  
+
+
+# ==============================================================================
+# LAVAAN MODEL MODEL DEFINITION (df = 0)
+# ==============================================================================
+# Load the required package
+library(lavaan)
+
+serial_model <- "
+  M1 ~ a1*X
+  M2 ~ a2*X + d*M1
+  Y  ~ cp*X + b1*M1 + b2*M2
+
+  #indirect effect via M1
+  ind_M1 := a1 * b1
+  
+  #indirect effect via M2
+  ind_M2 := a2 * b2
+  
+  #serial indirect effect via M1 and M2
+  ind_serial := a1 * d * b2
+"
+
+fits1 <- sem(serial_model, estimator = "MLR", data = dfs1)
+fits2 <- sem(serial_model, estimator = "MLR", data = dfs2)
+fits3 <- sem(serial_model, estimator = "MLR", data = dfs3)
+fits4 <- sem(serial_model, estimator = "MLR", data = dfs4)
+fits5 <- sem(serial_model, estimator = "MLR", data = dfs5)
+fits6 <- sem(serial_model, estimator = "MLR", data = dfs6)
+
+summary(fits1, standardized = TRUE)
+summary(fits2, standardized = TRUE)
+summary(fits3, standardized = TRUE)
+summary(fits4, standardized = TRUE)
+summary(fits5, standardized = TRUE)
+summary(fits6, standardized = TRUE)
+
+
+# ================================================================================
+# RUNNING r2_indirect ON RAW COEFFICIENTS (UNSTANDARDIZED b) TWO SERIAL MEDIATORS
+# ================================================================================
+
+cat("\n=== LAUNCHING r2_indirect ON RAW UNSTANDARDIZED DATA ===\n")
+res_dfs1 <- r2_indirect(fits1, 
+                        x_var = "X", 
+                        y_var = "Y", 
+                        Med_Path1 = c("a1", "b1"),
+                        Med_Path2 = c("a2", "b2"),
+                        Serial_Path = c("a1", "d", "b2"),
+                        n_boot = 200)
+
+res_dfs2 <- r2_indirect(fits2, 
+                        x_var = "X", 
+                        y_var = "Y", 
+                        Med_Path1 = c("a1", "b1"),
+                        Med_Path2 = c("a2", "b2"),
+                        Serial_Path = c("a1", "d", "b2"),
+                        n_boot = 200)
+
+res_dfs3 <- r2_indirect(fits3,  
+                        x_var = "X", 
+                        y_var = "Y", 
+                        Med_Path1 = c("a1", "b1"),
+                        Med_Path2 = c("a2", "b2"),
+                        Serial_Path = c("a1", "d", "b2"),
+                        n_boot = 200)
+
+res_dfs4 <- r2_indirect(fits4, 
+                        x_var = "X", 
+                        y_var = "Y", 
+                        Med_Path1 = c("a1", "b1"),
+                        Med_Path2 = c("a2", "b2"),
+                        Serial_Path = c("a1", "d", "b2"),
+                        n_boot = 200)
+
+res_dfs5 <- r2_indirect(fits5, 
+                        x_var = "X", 
+                        y_var = "Y", 
+                        Med_Path1 = c("a1", "b1"),
+                        Med_Path2 = c("a2", "b2"),
+                        Serial_Path = c("a1", "d", "b2"),
+                        n_boot = 200)
+
+res_dfs6 <- r2_indirect(fits6, 
+                        x_var = "X", 
+                        y_var = "Y", 
+                        Med_Path1 = c("a1", "b1"),
+                        Med_Path2 = c("a2", "b2"),
+                        Serial_Path = c("a1", "d", "b2"),
+                        n_boot = 200)
+
+cat("\n--> FUNCTION REPORT: DATASET 1 (N = 600) STANDARD\n")
+print(res_dfs1, row.names = FALSE)
+
+cat("\n--> FUNCTION REPORT: DATASET 2 (N = 700) STANDARD\n")
+print(res_dfs2, row.names = FALSE)
+
+cat("\n--> FUNCTION REPORT: DATASET 3 (TYPE 1 SUPPRESSION, N = 700)\n")
+print(res_dfs3, row.names = FALSE)
+
+cat("\n--> FUNCTION REPORT: DATASET 4 (TYPE 2 SUPPRESSION, N = 700)\n")
+print(res_dfs4, row.names = FALSE)
+
+cat("\n--> FUNCTION REPORT: DATASET 5 (TYPE 3 SUPPRESSION, N = 700)\n")
+print(res_dfs5, row.names = FALSE)
+
+cat("\n--> FUNCTION REPORT: DATASET 6 (TYPE 4 SUPPRESSION, N = 700)\n")
+print(res_dfs5, row.names = FALSE)
+
+
+# ==============================================================================
+# METHODOLOGICAL CHECK: WRIGHT'S DECOMPOSITION FOR SERIAL MEDIATORS (15 BLOCKS)
+# ==============================================================================
+wright_proof_serial <- function(model_fit, dataset_name = "Dataset") {
+  
+  est <- parameterEstimates(model_fit)
+  
+  # Structural paths
+  a1_est <- est$est[est$label == "a1"]
+  b1_est <- est$est[est$label == "b1"]
+  a2_est <- est$est[est$label == "a2"]
+  b2_est <- est$est[est$label == "b2"]
+  d_est  <- est$est[est$label == "d"]
+  cp_est <- est$est[est$label == "cp"]
+  
+  # Residual Variances
+  var_eM1 <- est$est[est$op == "~~" & est$lhs == "M1" & est$rhs == "M1"]
+  var_eM2 <- est$est[est$op == "~~" & est$lhs == "M2" & est$rhs == "M2"]
+  var_eY  <- est$est[est$op == "~~" & est$lhs == "Y"  & est$rhs == "Y"]
+  
+  # Matrix Sample Variances
+  cov_mat <- lavInspect(model_fit, "cov.ov")
+  var_X   <- cov_mat["X", "X"]
+  var_Y   <- cov_mat["Y", "Y"]
+  
+  # Compute the 15 Raw Components
+  # --- 1. Effects originating from X ---
+  B1_Raw  <- (cp_est)^2 * var_X
+  B2_Raw  <- (a1_est * b1_est)^2 * var_X
+  B3_Raw  <- (a2_est * b2_est)^2 * var_X
+  B4_Raw  <- (a1_est * d_est * b2_est)^2 * var_X
+  B5_Raw  <- 2 * cp_est * (a1_est * b1_est) * var_X
+  B6_Raw  <- 2 * cp_est * (a2_est * b2_est) * var_X
+  B7_Raw  <- 2 * cp_est * (a1_est * d_est * b2_est) * var_X
+  B8_Raw  <- 2 * (a1_est * b1_est) * (a2_est * b2_est) * var_X
+  B9_Raw  <- 2 * (a1_est * b1_est) * (a1_est * d_est * b2_est) * var_X
+  B10_Raw <- 2 * (a2_est * b2_est) * (a1_est * d_est * b2_est) * var_X
+  
+  # --- 2. Effects originating from eM1 
+  B11_Raw <- (b1_est)^2 * var_eM1
+  B12_Raw <- (d_est * b2_est)^2 * var_eM1
+  B13_Raw <- 2 * b1_est * (d_est * b2_est) * var_eM1
+  
+  # --- 3. Effects originating from eM2 and eY ---
+  B14_Raw <- (b2_est)^2 * var_eM2
+  B15_Raw <- var_eY
+  
+  Total_Raw <- sum(B1_Raw, B2_Raw, B3_Raw, B4_Raw, B5_Raw, B6_Raw, B7_Raw, 
+                   B8_Raw, B9_Raw, B10_Raw, B11_Raw, B12_Raw, B13_Raw, B14_Raw, B15_Raw)
+  
+  # Proportions
+  P1  <- B1_Raw / var_Y;  P2  <- B2_Raw / var_Y;  P3  <- B3_Raw / var_Y
+  P4  <- B4_Raw / var_Y;  P5  <- B5_Raw / var_Y;  P6  <- B6_Raw / var_Y
+  P7  <- B7_Raw / var_Y;  P8  <- B8_Raw / var_Y;  P9  <- B9_Raw / var_Y
+  P10 <- B10_Raw / var_Y; P11 <- B11_Raw / var_Y; P12 <- B12_Raw / var_Y
+  P13 <- B13_Raw / var_Y; P14 <- B14_Raw / var_Y; P15 <- B15_Raw / var_Y
+  
+  Total_Prop <- sum(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15)
+  
+  # --- PRINTING THE COMPREHENSIVE MATHEMATICAL CHECK REPORT ---
+  cat("\n===========================================================================\n")
+  cat(" WRIGHT DECOMPOSITION PROOF (SERIAL):", dataset_name, "\n")
+  cat("===========================================================================\n")
+  cat(sprintf(" Observed Variance of Y (Denominator) : %10.5f\n", var_Y))
+  cat(sprintf(" Implied Variance of Y (Reconstructed): %10.5f\n", Total_Raw))
+  cat(sprintf(" Discrepancy (Reconstruction Error)   : %10.5f\n", var_Y - Total_Raw))
+  cat("---------------------------------------------------------------------------\n")
+  cat(sprintf(" %-38s | %-10s | %-10s | %-10s\n", "COMPONENT", "RAW VAR", "PROPORTION", "PERCENT"))
+  cat("---------------------------------------------------------------------------\n")
+  cat(sprintf("  1. Pure Direct Effect (cp^2)          | %10.5f | %10.5f | %8.2f %%\n", B1_Raw,  P1,  P1*100))
+  cat(sprintf("  2. Pure Indirect M1 ((a1*b1)^2)       | %10.5f | %10.5f | %8.2f %%\n", B2_Raw,  P2,  P2*100))
+  cat(sprintf("  3. Pure Indirect M2 ((a2*b2)^2)       | %10.5f | %10.5f | %8.2f %%\n", B3_Raw,  P3,  P3*100))
+  cat(sprintf("  4. Pure Serial ((a1*d*b2)^2)          | %10.5f | %10.5f | %8.2f %%\n", B4_Raw,  P4,  P4*100))
+  cat(sprintf("  5. Wright Joint Cov (2*cp*a1*b1)      | %10.5f | %10.5f | %8.2f %%\n", B5_Raw,  P5,  P5*100))
+  cat(sprintf("  6. Wright Joint Cov (2*cp*a2*b2)      | %10.5f | %10.5f | %8.2f %%\n", B6_Raw,  P6,  P6*100))
+  cat(sprintf("  7. Wright Joint Cov (2*cp*a1*d*b2)    | %10.5f | %10.5f | %8.2f %%\n", B7_Raw,  P7,  P7*100))
+  cat(sprintf("  8. Wright Joint Cov (2*a1*b1*a2*b2)   | %10.5f | %10.5f | %8.2f %%\n", B8_Raw,  P8,  P8*100))
+  cat(sprintf("  9. Wright Joint Cov (2*a1*b1*a1*d*b2) | %10.5f | %10.5f | %8.2f %%\n", B9_Raw,  P9,  P9*100))
+  cat(sprintf(" 10. Wright Joint Cov (2*a2*b2*a1*d*b2) | %10.5f | %10.5f | %8.2f %%\n", B10_Raw, P10, P10*100))
+  cat(sprintf(" 11. Indep. M1 Error via b1 (b1^2*eM1)  | %10.5f | %10.5f | %8.2f %%\n", B11_Raw, P11, P11*100))
+  cat(sprintf(" 12. Indep. M1 Error via M2 ((d*b2)^2*e)| %10.5f | %10.5f | %8.2f %%\n", B12_Raw, P12, P12*100))
+  cat(sprintf(" 13. M1 Error Joint Cov (2*b1*d*b2*eM1) | %10.5f | %10.5f | %8.2f %%\n", B13_Raw, P13, P13*100))
+  cat(sprintf(" 14. Indep. M2 Error (b2^2*eM2)         | %10.5f | %10.5f | %8.2f %%\n", B14_Raw, P14, P14*100))
+  cat(sprintf(" 15. Y Residual/Error Var (eY)          | %10.5f | %10.5f | %8.2f %%\n", B15_Raw, P15, P15*100))
+  cat("---------------------------------------------------------------------------\n")
+  cat(sprintf(" %-38s | %10.5f | %10.5f | %8.2f %%\n", "TOTAL CHECK", Total_Raw, Total_Prop, Total_Prop*100))
+  cat("===========================================================================\n")
+}
+
+# ==============================================================================
+# EXECUTE PROOF ON THE FITTED MODELS
+# ==============================================================================
+# Assuming models are already estimated in lavaan using raw data:
+wright_proof_serial(fits1, "Dataset 1 (N=600, Standard)")
+wright_proof_serial(fits2, "Dataset 2 (N=700, Standard)")
+wright_proof_serial(fits3, "Dataset 3 (N=700, Type 1 Suppression)")
+wright_proof_serial(fits4, "Dataset 4 (N=700, Type 2 Suppression)")
+wright_proof_serial(fits5, "Dataset 3 (N=700, Type 3 Suppression)")
+wright_proof_serial(fits6, "Dataset 4 (N=700, Type 4 Suppression)")
+################################################################################
+```
+
+## 5. A-Priori Power Analysis and Sensitivity Analysis based on $R^2_{\text{indirect}}$
+
+### 5.1. Theoretical Framework: Joint Significance Power
+
+Statistical power in mediation analysis has historically been evaluated using individual path parameters rather than a consolidated effect size metric. This framework operationalizes power analysis directly through the **Joint Significance Criterion**. Under this approach, an indirect effect is deemed statistically significant if and only if every single constituent path coefficient within the structural chain ($X \rightarrow M \rightarrow Y$) is significantly different from zero at a designated alpha level ($\alpha$).
+
+Assuming the sampling distributions of the path coefficients are asymptotically independent, the joint power of the indirect pathway ($\text{Power}_{\text{joint}}$) is defined as the product of the individual statistical powers of its $k$ constituent paths:
+
+$$\text{Power}_{\text{joint}} = \prod_{i=1}^{k} \text{Power}_i$$
+
+Because $\text{Power}_i \le 1$, the joint power decreases as the length of the mediation chain ($k\_paths$) increases. This mathematical reality requires sample size planning to account for the compounding erosion of power across multi-stage structures.
+
+### 5.2. Mathematical Boundary Profiles: Balanced vs. Bottleneck Scenarios
+
+A known mathematical property of any product-based effect size—including the unstandardized product $a \cdot b$, the standardized product $\beta_a \cdot \beta_b$, and the variance-accounted-for metric $R^2_{\text{indirect}}$—is that an infinite number of path combinations can yield the exact same global effect size. For instance, an $R^2_{\text{indirect}} = 0.01$ can result from two moderate paths or from one extremely large path paired with a near-zero path.
+
+To resolve this indeterminacy without relying on arbitrary parameter assumptions, this framework implements a boundary-profile method that defines two structural extremes:
+
+- **The Balanced Scenario (Best Case):** This profile assumes that the underlying structural mechanism is perfectly symmetrical. The total variance explained by the indirect effect is distributed evenly across all $k$ paths. For a target indirect coefficient $K = \sqrt{R^2_{\text{indirect}}}$, the standardized coefficient for each path is calculated as: $$\beta_{\text{balanced}} = K^{\frac{1}{k}}$$ Because statistical power is a non-linear function maximized when the minimum effect size in a chain is as large as possible, the balanced scenario yields the highest possible joint power for a given $R^2_{\text{indirect}}$. It provides the lower bound for the required sample size ($N$).
+
+- **The Bottleneck Scenario (Worst Case):** This profile assumes extreme structural asymmetry. One path acts as a severe statistical restriction (the "bottleneck"), while the remaining $k-1$ paths are maximized up to a user-defined empirical ceiling ($\beta_{\text{max}}$, or `max_beta`). The bottleneck path coefficient ($\beta_{\text{min}}$) is formulated as: $$\beta_{\text{min}} = \frac{K}{(\beta_{\text{max}})^{k-1}}$$ This scenario represents the most conservative estimation layout. It identifies the maximum sample size required to detect the effect even if the mediation chain relies on a single highly fragile pathway.
+
+### 5.3. Error Variance Adjustments and Multi-Mediator Penalties
+
+The power engine does not treat the outcome variable's residual variance as a static parameter. Following Wright’s path tracing rules, the residual variance of the outcome ($\sigma^2_{eY}$) is dynamically computed by subtracting all explained components from the total unit variance ($1$):
+
+$$\sigma^2_{eY} = 1 - \left(c'^2 + K^2 + 2c'K\right) - R^2_{\text{parallel}} - R^2_{\text{covariates}}$$
+
+Where $c'$ is the direct effect, $K$ is the indirect path coefficient ($\sqrt{R^2_{\text{indirect}}}$), $2c'K$ is the joint covariance block, $R^2_{\text{parallel}}$ is the variance explained by alternative parallel paths, and $R^2_{\text{covariates}}$ represents external control variables.
+
+Furthermore, when evaluating a target mediator embedded within a parallel mediation design, the framework applies an analytic Variance Inflation Factor (VIF) penalty to account for collinearity among mediators:
+
+$$\text{VIF} = \frac{1}{1 - R^2_{\text{m\_overlap}}}$$
+
+This penalty inflates the standard errors of the path coefficients, capturing the loss of statistical precision that occurs when parallel mediators share overlapping variance ($R^2_{\text{m\_overlap}}$).
+
+------------------------------------------------------------------------
+
+### 6. Power Analysis for Single, Parallel, and Serial Mediation (`wright_power`)
+
+### 6.1 Algorithmic Mechanics
+
+The `wright_power` function computes the required sample size ($N$) to detect a target $R^2_{\text{indirect}}$ by executing a deterministic grid-search optimization across a range of $N \in [10, 5000]$.
+
+For each iteration of $N$, the function executes the following mathematical sequence: 1. Calculates the standard error for any given path coefficient $\beta$: $$\text{SE}_{\beta} = \sqrt{\frac{\sigma^2_{eY}}{N \cdot (1 - \beta^2)}} \cdot \sqrt{\text{VIF}}$$ 2. Computes the individual path power via the standard normal cumulative distribution function ($\Phi$): $$\text{Power}_{\beta} = \Phi\left(\frac{\beta}{\text{SE}_{\beta}} - z_{1 - \frac{\alpha}{2}}\right)$$ 3. Aggregates individual powers into the joint power metric for both the Balanced and Bottleneck profiles. 4. Identifies the exact sample sizes where the joint power crosses the user-specified threshold (`power_target`).
+
+### 6.2 Structural Adaptation (Single, Parallel, and Serial Models)
+
+The function adapts to different structural architectures via the execution arguments: \* **Single Mediation:** Evaluated by setting `k_paths = 2`, `r2_parallel = 0`, and `r2_m_overlap = 0`. \* **Parallel Mediation:** Incorporates the variance drainage of concurrent pathways via `r2_parallel` and handles the structural collinearity of competing mediators by setting `r2_m_overlap > 0`, which triggers the VIF penalty. \* **Serial Mediation:** Evaluated by scaling `k_paths` to $3$ or more structural steps. The mathematical engine automatically projects the compounding power degradation across the multi-stage chain.
+
+Additionally, setting `type = "explore"` forces the engine to run the optimization twice: first under a *Consistent* regime (where $c'$ and the indirect effect have matching signs, adding variance to the model) and second under a *Suppression* regime (where opposing signs subtract variance, altering $\sigma^2_{eY}$ and shifting the required sample size).
+
+```{r}
+#' Wright Mediation Power Analysis (A-Priori)
+#' 
+#' Computes the required Sample Size (N) to detect a specific indirect R2,
+#' returning the Best (Balanced) and Worst (Bottleneck) scenarios.
+#' 
+#' @param r2_indirect Target variance of Y explained by the indirect effect.
+#' @param type "explore" (default), "consistent", or "suppression".
+#' @param k_paths Number of multiplicative paths in the indirect block (default = 2).
+#' @param c_prime Expected direct effect coefficient (default = 0.20).
+#' @param r2_m_overlap Variance of the target mediator explained by other parallel mediators (VIF penalty).
+#'                     Tip: For 2 mediators with a correlation of 0.30, enter the squared value (0.30^2 = 0.09).
+#'                     Tip: For 3+ mediators, enter the multiple R2 of the target regressed on the others.
+#' @param r2_parallel Variance of Y explained by other parallel mediators.
+#' @param r2_covariates Variance of Y explained by external control variables.
+#' @param power_target Desired joint statistical power threshold (default = 0.80).
+#' @param alpha Significance level (default = 0.05).
+#' @param max_beta Maximum allowed single standardized coefficient (guardrail, default = 0.80).
+
+wright_power <- function(r2_indirect, type = "explore", k_paths = 2, c_prime = 0.20,
+                         r2_m_overlap = 0, r2_parallel = 0, r2_covariates = 0,
+                         power_target = 0.80, alpha = 0.05, max_beta = 0.80) {
+  
+  # 1. INPUT VALIDATION
+  if(r2_indirect <= 0 | r2_indirect >= 1) stop("r2_indirect must be between 0 and 1.")
+  if(r2_covariates < 0 | r2_covariates >= 0.90) stop("r2_covariates must be between 0 and 0.90.")
+  if(r2_parallel < 0 | r2_parallel >= 0.90) stop("r2_parallel must be between 0 and 0.90.")
+  if(r2_m_overlap < 0 | r2_m_overlap >= 1) stop("r2_m_overlap must be strictly between 0 and 1.")
+  if(k_paths < 2) stop("k_paths must be at least 2.")
+  
+  # 2. PARALLEL MEDIATION PENALTY (Analytic VIF)
+  vif_penalty <- 1 / (1 - r2_m_overlap)
+  
+  # 3. CORE POWER ENGINE
+  get_n <- function(cp) {
+    K <- sqrt(r2_indirect)
+    min_beta <- K / (max_beta^(k_paths - 1))
+    
+    # Skip if constraints violate the geometric guardrail
+    if(min_beta > max_beta) return(c(NA, NA))
+    
+    # Compute residual variance of Y (incorporating covariates and parallel mediators)
+    var_error_y <- 1 - (cp^2 + K^2 + 2 * cp * K) - r2_covariates - r2_parallel
+    if(var_error_y <= 0) var_error_y <- 0.01
+    
+    # Grid search for N
+    n_grid <- seq(10, 5000, by = 1)
+    n_balanced <- NA
+    n_bottleneck <- NA
+    
+    for(n in n_grid) {
+      # --- BALANCED SCENARIO ---
+      beta_bal <- K^(1/k_paths)
+      se_bal <- sqrt(var_error_y / (n * (1 - beta_bal^2))) * sqrt(vif_penalty)
+      pow_bal <- pnorm((beta_bal / se_bal) - qnorm(1 - alpha/2))
+      joint_pow_bal <- pow_bal^k_paths
+      
+      # --- BOTTLENECK SCENARIO ---
+      se_min <- sqrt(var_error_y / (n * (1 - min_beta^2))) * sqrt(vif_penalty)
+      se_max <- sqrt(var_error_y / (n * (1 - max_beta^2))) * sqrt(vif_penalty)
+      pow_min <- pnorm((min_beta / se_min) - qnorm(1 - alpha/2))
+      pow_max <- pnorm((max_beta / se_max) - qnorm(1 - alpha/2))
+      joint_pow_bot <- pow_min * (pow_max^(k_paths - 1))
+      
+      # Capture threshold crossing points
+      if(is.na(n_balanced) && joint_pow_bal >= power_target) n_balanced <- n
+      if(is.na(n_bottleneck) && joint_pow_bot >= power_target) n_bottleneck <- n
+      
+      # Break optimization if both profiles are populated
+      if(!is.na(n_balanced) && !is.na(n_bottleneck)) break
+    }
+    return(c(n_balanced, n_bottleneck))
+  }
+  
+  # 4. OUTPUT GENERATION
+  cat("\n=============================================================\n")
+  cat("           WRIGHT MEDIATION A PRIORI POWER ANALYSIS          \n")
+  cat("=============================================================\n")
+  cat(sprintf("Target Indirect R2:    %.4f \n", r2_indirect))
+  cat(sprintf("Structural Paths:      %d \n", k_paths))
+  cat(sprintf("Direct Effect (c'):    %.2f (Base Magnitude)\n", abs(c_prime)))
+  cat(sprintf("Other Mediators (R2):  %.2f (Variance in Y)\n", r2_parallel))
+  cat(sprintf("Target M Overlap (R2): %.2f (Collinearity VIF = %.2f)\n", r2_m_overlap, vif_penalty))
+  cat(sprintf("Covariates (R2):       %.2f \n", r2_covariates))
+  cat(sprintf("Target Joint Power:    %.2f \n", power_target))
+  cat("-------------------------------------------------------------\n")
+  cat(sprintf("%-20s %-18s %-12s\n", "SCENARIO", "MODEL TYPE", "REQUIRED N"))
+  cat("-------------------------------------------------------------\n")
+  
+  scenarios <- if(type == "explore") c("consistent", "suppression") else type
+  
+  for(t in scenarios) {
+    cp_val <- if(t == "consistent") abs(c_prime) else -abs(c_prime)
+    t_label <- if(t == "consistent") "Consistent" else "Suppression"
+    
+    results <- get_n(cp_val)
+    
+    n_bal <- if(!is.na(results[1])) sprintf("%d", results[1]) else "Unreachable"
+    n_bot <- if(!is.na(results[2])) sprintf("%d", results[2]) else "Unreachable"
+    
+    cat(sprintf("%-20s %-18s %-12s\n", "Balanced", t_label, n_bal))
+    cat(sprintf("%-20s %-18s %-12s\n", "Bottleneck", t_label, n_bot))
+    if(t != scenarios[length(scenarios)]) cat("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n")
+  }
+  cat("=============================================================\n")
+  cat("Method: Joint Significance Power.\n\n")
+}
+
+
+################################################################################
+###Function usage example!
+
+#Single mediator model
+wright_power(r2_indirect = 0.0081,
+             type = "explore",
+             k_paths = 2,
+             c_prime = 0.30,
+             r2_m_overlap = 0, 
+             r2_parallel = 0, 
+             r2_covariates = 0,
+             power_target = 0.80,
+             alpha = 0.05,
+             max_beta = 0.80)
+
+#Two parallel mediators model
+wright_power(r2_indirect = 0.0081, 
+             type = "explore", 
+             k_paths = 2,
+             c_prime = 0.30,
+             r2_m_overlap = 0.09,
+             r2_parallel = 0.09,
+             r2_covariates = 0,
+             power_target = 0.80, 
+             alpha = 0.05,
+             max_beta = 0.80)
+
+#Two serial mediators model
+wright_power(r2_indirect = 0.000729,
+             type = "explore",
+             k_paths = 3,
+             r2_m_overlap = 0, 
+             r2_parallel = 0, 
+             r2_covariates = 0,
+             power_target = 0.80,
+             alpha = 0.05,
+             max_beta = 0.80)
+
+```
+
+------------------------------------------------------------------------
+
+## 7. Sensitivity Analysis for the MDES (`wright_sensitivity`)
+
+### 7.1. Algorithmic Mechanics
+
+When the sample size ($N$) is predetermined by resource constraints, retrospective design limitations, or existing datasets, the analytical objective shifts from finding $N$ to defining the **Minimum Detectable Effect Size (MDES)**. The `wright_sensitivity` function executes this optimization by reversing the grid-search process.
+
+The function loops through an incremental array of variance proportions ($R^2_{\text{indirect}} \in [0.0001, 0.8000]$). For each discrete variance value, it extracts the corresponding path coefficients under both Balanced and Bottleneck constraints, determines the resulting outcome error variance, and evaluates the achieved joint power. The MDES is defined as the absolute lowest $R^2_{\text{indirect}}$ value that achieves the target joint power given the fixed sample size $N$.
+
+### 7.2 Structural Interpretation of Outputs
+
+The output of `wright_sensitivity` provides a clear assessment of a study's empirical threshold:
+
+| Scenario | Model Type | Required $R^2_{\text{indirect}}$ (MDES) | Interpretation |
+|:-----------------|:-----------------|:-----------------|:-----------------|
+| **Balanced** | Consistent / Suppression | *Value* | The absolute lowest variance proportion the study can detect under optimal, symmetrical path conditions. |
+| **Bottleneck** | Consistent / Suppression | *Value* | The minimum variance proportion required if the model contains a highly asymmetric, weak pathway. |
+
+If a calculated MDES scenario returns `"Unreachable"`, it signifies that the structural parameters, background covariates, or collinearity penalties drain so much variance from the system that it is mathematically impossible to achieve the target power at that sample size, regardless of the size of the indirect effect.
+
+```{r}
+#' Wright Mediation Sensitivity Analysis
+#' 
+#' Computes the Minimum Detectable Effect Size (MDES) in terms of indirect R2
+#' given a fixed sample size, returning the Best (Balanced) and Worst (Bottleneck) scenarios.
+#' 
+#' @param n Fixed sample size available for the study.
+#' @param type "explore" (default), "consistent", or "suppression".
+#' @param k_paths Number of multiplicative paths in the indirect block (default = 2).
+#' @param c_prime Expected direct effect coefficient (default = 0.20).
+#' @param r2_m_overlap Variance of the target mediator explained by other parallel mediators (VIF penalty).
+#'        Tip: For 2 mediators with a correlation of 0.30, enter the squared value (0.30^2 = 0.09).
+#'        Tip: For 3+ mediators, enter the multiple R2 of the target regressed on the others.
+#' @param r2_parallel Variance of Y explained by other parallel mediators.
+#' @param r2_covariates Variance of Y explained by external control variables.
+#' @param power_target Desired joint statistical power threshold (default = 0.80).
+#' @param alpha Significance level (default = 0.05).
+#' @param max_beta Maximum allowed single standardized coefficient (guardrail, default = 0.80).
+
+wright_sensitivity <- function(n, type = "explore", k_paths = 2, c_prime = 0.20,
+                               r2_m_overlap = 0, r2_parallel = 0, r2_covariates = 0,
+                               power_target = 0.80, alpha = 0.05, max_beta = 0.80) {
+  
+  # 1. INPUT VALIDATION
+  if(n < 10) stop("Sample size 'n' must be at least 10.")
+  if(r2_covariates < 0 | r2_covariates >= 0.90) stop("r2_covariates must be between 0 and 0.90.")
+  if(r2_parallel < 0 | r2_parallel >= 0.90) stop("r2_parallel must be between 0 and 0.90.")
+  if(r2_m_overlap < 0 | r2_m_overlap >= 1) stop("r2_m_overlap must be strictly between 0 and 1.")
+  if(k_paths < 2) stop("k_paths must be at least 2.")
+  
+  # 2. PARALLEL MEDIATION PENALTY (Analytic VIF)
+  vif_penalty <- 1 / (1 - r2_m_overlap)
+  
+  # 3. CORE SENSITIVITY ENGINE
+  get_mdes <- function(cp) {
+    r2_grid <- seq(0.0001, 0.8000, by = 0.0001)
+    
+    mdes_balanced   <- NA
+    mdes_bottleneck <- NA
+    
+    for(r2 in r2_grid) {
+      K <- sqrt(r2)
+      min_beta <- K / (max_beta^(k_paths - 1))
+      
+      if(min_beta > max_beta) next
+      
+      # Compute residual variance of Y
+      var_error_y <- 1 - (cp^2 + K^2 + 2 * cp * K) - r2_covariates - r2_parallel
+      if(var_error_y <= 0) var_error_y <- 0.01
+      
+      # --- BALANCED SCENARIO ---
+      beta_bal <- K^(1/k_paths)
+      se_bal <- sqrt(var_error_y / (n * (1 - beta_bal^2))) * sqrt(vif_penalty)
+      pow_bal <- pnorm((beta_bal / se_bal) - qnorm(1 - alpha/2))
+      joint_pow_bal <- pow_bal^k_paths 
+      
+      # --- BOTTLENECK SCENARIO ---
+      se_min <- sqrt(var_error_y / (n * (1 - min_beta^2))) * sqrt(vif_penalty)
+      se_max <- sqrt(var_error_y / (n * (1 - max_beta^2))) * sqrt(vif_penalty)
+      
+      pow_min <- pnorm((min_beta / se_min) - qnorm(1 - alpha/2))
+      pow_max <- pnorm((max_beta / se_max) - qnorm(1 - alpha/2))
+      joint_pow_bot <- pow_min * (pow_max^(k_paths - 1))
+      
+      if(is.na(mdes_balanced) && joint_pow_bal >= power_target) mdes_balanced <- r2
+      if(is.na(mdes_bottleneck) && joint_pow_bot >= power_target) mdes_bottleneck <- r2
+      
+      if(!is.na(mdes_balanced) && !is.na(mdes_bottleneck)) break
+    }
+    return(c(mdes_balanced, mdes_bottleneck))
+  }
+  
+  # 4. OUTPUT GENERATION
+  cat("\n=============================================================\n")
+  cat("           WRIGHT MEDIATION SENSITIVITY ANALYSIS             \n")
+  cat("=============================================================\n")
+  cat(sprintf("Fixed Sample Size (N): %d \n", n))
+  cat(sprintf("Structural Paths:      %d \n", k_paths))
+  cat(sprintf("Direct Effect (c'):    %.2f (Base Magnitude)\n", abs(c_prime)))
+  cat(sprintf("Other Mediators (R2):  %.2f (Variance in Y)\n", r2_parallel))
+  cat(sprintf("Target M Overlap (R2): %.2f (Collinearity VIF = %.2f)\n", r2_m_overlap, vif_penalty))
+  cat(sprintf("Covariates (R2):       %.2f \n", r2_covariates))
+  cat(sprintf("Target Joint Power:    %.2f \n", power_target))
+  cat("-------------------------------------------------------------\n")
+  cat(sprintf("%-20s %-18s %-12s\n", "SCENARIO", "MODEL TYPE", "REQ. R2"))
+  cat("-------------------------------------------------------------\n")
+  
+  scenarios <- if(type == "explore") c("consistent", "suppression") else type
+  
+  for(t in scenarios) {
+    cp_val <- if(t == "consistent") abs(c_prime) else -abs(c_prime)
+    t_label <- if(t == "consistent") "Consistent" else "Suppression"
+    
+    results <- get_mdes(cp_val)
+    
+    r2_bal <- if(!is.na(results[1])) sprintf("%.4f", results[1]) else "Unreachable"
+    r2_bot <- if(!is.na(results[2])) sprintf("%.4f", results[2]) else "Unreachable"
+    
+    cat(sprintf("%-20s %-18s %-12s\n", "Balanced", t_label, r2_bal))
+    cat(sprintf("%-20s %-18s %-12s\n", "Bottleneck", t_label, r2_bot))
+    if(t != scenarios[length(scenarios)]) cat("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n")
+  }
+  cat("=============================================================\n")
+  cat("Method: Joint Significance Power.\n\n")
+}
+
+
+################################################################################
+###Function usage example!
+
+#Single mediator model
+wright_sensitivity(n = 107,
+                   type = "explore",
+                   k_paths = 2,
+                   c_prime = 0.30,
+                   r2_m_overlap = 0, 
+                   r2_parallel = 0, 
+                   r2_covariates = 0,
+                   power_target = 0.80,
+                   alpha = 0.05,
+                   max_beta = 0.80)
+
+#Two parallel mediators model
+wright_sensitivity(n = 105, 
+                   type = "explore", 
+                   k_paths = 2,
+                   c_prime = 0.30,
+                   r2_m_overlap = 0.09,
+                   r2_parallel = 0.09,
+                   r2_covariates = 0,
+                   power_target = 0.80, 
+                   alpha = 0.05,
+                   max_beta = 0.80)
+
+#Two serial mediators model
+wright_sensitivity(n = 136,
+                   type = "explore",
+                   k_paths = 3,
+                   r2_m_overlap = 0, 
+                   r2_parallel = 0, 
+                   r2_covariates = 0,
+                   power_target = 0.80,
+                   alpha = 0.05,
+                   max_beta = 0.80)
+
+```
