@@ -133,7 +133,7 @@ window.Quarto = {
   <li><a href="#interpretation-under-suppression-conditions" id="toc-interpretation-under-suppression-conditions" class="nav-link" data-scroll-target="#interpretation-under-suppression-conditions">3.3 Interpretation Under Suppression Conditions</a></li>
   <li><a href="#scaling-the-decomposition-for-complex-models" id="toc-scaling-the-decomposition-for-complex-models" class="nav-link" data-scroll-target="#scaling-the-decomposition-for-complex-models">3.4 Scaling the Decomposition for Complex Models</a></li>
   </ul></li>
-  <li><a href="#r2_indirect" id="toc-r2_indirect" class="nav-link" data-scroll-target="#r2_indirect">4. R2_indirect</a>
+  <li><a href="#the-r2_textindirect-function-r2_indirect" id="toc-the-r2_textindirect-function-r2_indirect" class="nav-link" data-scroll-target="#the-r2_textindirect-function-r2_indirect">4. The <span class="math inline">\(R^2_{\text{indirect}}\)</span> Function (<code>r2_indirect</code>)</a>
   <ul class="collapse">
   <li><a href="#applyng-the-function-to-different-mediation-models" id="toc-applyng-the-function-to-different-mediation-models" class="nav-link" data-scroll-target="#applyng-the-function-to-different-mediation-models">4.1 Applyng the function to different mediation models</a></li>
   <li><a href="#single-mediator-models" id="toc-single-mediator-models" class="nav-link" data-scroll-target="#single-mediator-models">4.1.1 Single Mediator Models</a></li>
@@ -202,7 +202,7 @@ window.Quarto = {
 </section>
 <section id="sewall-wrights-path-tracing-rules" class="level3">
 <h3 class="anchored" data-anchor-id="sewall-wrights-path-tracing-rules">1.2 Sewall Wright’s Path Tracing Rules</h3>
-<p>To derive a formalized effect size, this framework leverages Sewall Wright’s seminal path tracing rules. These foundational principles sates that the total variance of an outcome variable can be exactly decomposed into the sum of the structural pathways connecting the variable to itself, either through direct, indirect, or common causal tracks.</p>
+<p>To derive a formalized effect size, this framework leverages Sewall Wright’s seminal path tracing rules. These foundational principles state that the total variance of an outcome variable can be exactly decomposed into the sum of the structural pathways connecting the variable to itself, either through direct, indirect, or common causal tracks.</p>
 <p>In a standard single-mediator structure where an independent variable (<span class="math inline">\(X\)</span>) affects the dependent variable (<span class="math inline">\(Y\)</span>) directly via path <span class="math inline">\(c'\)</span> and indirectly through a mediator (<span class="math inline">\(M\)</span>) via paths <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, Wright’s rules partition the total observed variance of the outcome (<span class="math inline">\(\sigma^2_Y\)</span>) into the following additive components:</p>
 <p><span class="math display">\[\sigma^2_Y = {c'}^2 \sigma^2_X + a^2 b^2 \sigma^2_X + 2 a b c' \sigma^2_X + b^2 \sigma^2_{e_M} + \sigma^2_{e_Y}\]</span></p>
 <p>Where: * <span class="math inline">\({c'}^2 \sigma^2_X\)</span> represents the variance uniquely explained by the direct effect of <span class="math inline">\(X\)</span>. * <span class="math inline">\(a^2 b^2 \sigma^2_X\)</span> represents the variance uniquely explained by the indirect pathway (<span class="math inline">\(X \rightarrow M \rightarrow Y\)</span>). * <span class="math inline">\(2 a b c' \sigma^2_X\)</span> captures the unanalyzed covariance between the direct and indirect paths arising from their shared upstream cause (<span class="math inline">\(X\)</span>). * <span class="math inline">\(b^2 \sigma^2_{e_M}\)</span> represents the variance transmitted to <span class="math inline">\(Y\)</span> from the unexplained residual of the mediator (<span class="math inline">\(e_M\)</span>). * <span class="math inline">\(\sigma^2_{e_Y}\)</span> is the residual error variance intrinsic to <span class="math inline">\(Y\)</span>.</p>
@@ -269,8 +269,8 @@ window.Quarto = {
 <p>In all configurations, the <code>wright_proof</code> function verifies that the final residual error block remains non-negative and that the total decomposed variance precisely matches the observed variance of the outcome. This procedure may be extended to even more complex models.</p>
 </section>
 </section>
-<section id="r2_indirect" class="level2">
-<h2 class="anchored" data-anchor-id="r2_indirect">4. R2_indirect</h2>
+<section id="the-r2_textindirect-function-r2_indirect" class="level2">
+<h2 class="anchored" data-anchor-id="the-r2_textindirect-function-r2_indirect">4. The <span class="math inline">\(R^2_{\text{indirect}}\)</span> Function (<code>r2_indirect</code>)</h2>
 <p>#FUNCTION FOR ESTIMATING SPECIFIC VARIANCE EXPLAINED BY INDIRECT EFFECTS</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>r2_indirect <span class="ot">&lt;-</span> <span class="cf">function</span>(model_fit, x_var, y_var, ..., <span class="at">n_boot =</span> <span class="dv">500</span>) {</span>

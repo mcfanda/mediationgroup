@@ -19,18 +19,13 @@ In structural equation modeling (SEM) and mediation analysis, quantifying the ma
 
 ### 1.2 Sewall Wright’s Path Tracing Rules
 
-To derive a formalized effect size, this framework leverages Sewall Wright’s seminal path tracing rules. These foundational principles sates that the total variance of an outcome variable can be exactly decomposed into the sum of the structural pathways connecting the variable to itself, either through direct, indirect, or common causal tracks. 
+To derive a formalized effect size, this framework leverages Sewall Wright’s seminal path tracing rules. These foundational principles state that the total variance of an outcome variable can be exactly decomposed into the sum of the structural pathways connecting the variable to itself, either through direct, indirect, or common causal tracks.
 
 In a standard single-mediator structure where an independent variable ($X$) affects the dependent variable ($Y$) directly via path $c'$ and indirectly through a mediator ($M$) via paths $a$ and $b$, Wright's rules partition the total observed variance of the outcome ($\sigma^2_Y$) into the following additive components:
 
 $$\sigma^2_Y = {c'}^2 \sigma^2_X + a^2 b^2 \sigma^2_X + 2 a b c' \sigma^2_X + b^2 \sigma^2_{e_M} + \sigma^2_{e_Y}$$
 
-Where:
-* ${c'}^2 \sigma^2_X$ represents the variance uniquely explained by the direct effect of $X$.
-* $a^2 b^2 \sigma^2_X$ represents the variance uniquely explained by the indirect pathway ($X \rightarrow M \rightarrow Y$).
-* $2 a b c' \sigma^2_X$ captures the unanalyzed covariance between the direct and indirect paths arising from their shared upstream cause ($X$).
-* $b^2 \sigma^2_{e_M}$ represents the variance transmitted to $Y$ from the unexplained residual of the mediator ($e_M$).
-* $\sigma^2_{e_Y}$ is the residual error variance intrinsic to $Y$.
+Where: \* ${c'}^2 \sigma^2_X$ represents the variance uniquely explained by the direct effect of $X$. \* $a^2 b^2 \sigma^2_X$ represents the variance uniquely explained by the indirect pathway ($X \rightarrow M \rightarrow Y$). \* $2 a b c' \sigma^2_X$ captures the unanalyzed covariance between the direct and indirect paths arising from their shared upstream cause ($X$). \* $b^2 \sigma^2_{e_M}$ represents the variance transmitted to $Y$ from the unexplained residual of the mediator ($e_M$). \* $\sigma^2_{e_Y}$ is the residual error variance intrinsic to $Y$.
 
 By systematically accounting for every linear component, this exact decomposition provides the mathematical foundation necessary to isolate the unique variance explained ($R^2$) by the indirect pathway without confounding or double-counting effects across multi-stage structures.
 
@@ -113,7 +108,7 @@ The algebraic validation scales to accommodate more complex mediation architectu
 
 In all configurations, the `wright_proof` function verifies that the final residual error block remains non-negative and that the total decomposed variance precisely matches the observed variance of the outcome. This procedure may be extended to even more complex models.
 
-## 4. R2_indirect
+## 4. The $R^2_{\text{indirect}}$ Function (`r2_indirect`)
 
 #FUNCTION FOR ESTIMATING SPECIFIC VARIANCE EXPLAINED BY INDIRECT EFFECTS
 
@@ -973,15 +968,15 @@ For each iteration of $N$, the function executes the following mathematical sequ
 
 The function adapts to different structural architectures via specific execution arguments:
 
-* **Single Mediation:** Evaluated by setting `k_paths = 2`, `r2_parallel = 0`, and `r2_m_overlap = 0`.
-* **Parallel Mediation:** Incorporates the variance drainage of concurrent pathways via `r2_parallel` and handles the structural collinearity of competing mediators by setting `r2_m_overlap > 0` (triggering the VIF penalty).
-* **Serial Mediation:** Evaluated by scaling `k_paths` to $3$ or more structural steps. The mathematical engine automatically projects the compounding power degradation across the multi-stage chain.
+- **Single Mediation:** Evaluated by setting `k_paths = 2`, `r2_parallel = 0`, and `r2_m_overlap = 0`.
+- **Parallel Mediation:** Incorporates the variance drainage of concurrent pathways via `r2_parallel` and handles the structural collinearity of competing mediators by setting `r2_m_overlap > 0` (triggering the VIF penalty).
+- **Serial Mediation:** Evaluated by scaling `k_paths` to $3$ or more structural steps. The mathematical engine automatically projects the compounding power degradation across the multi-stage chain.
 
 Additionally, the algorithm also accounts for the directionality of the structural paths via the `type` parameter. Because the decomposition of variance includes a joint covariance block ($2c'K$), the signs of the effects dictate the final residual error of the outcome ($\sigma^2_{eY}$):
 
-* **Consistent Models (`type = "consistent"`):** The direct effect ($c'$) and the indirect effect have the same sign. They cooperate to explain variance in $Y$, mathematically shrinking the residual error. This deflation of error variance tightens the standard errors of the paths, thereby increasing statistical power and lowering the required sample size.
-* **Suppression Models (`type = "suppression"`):** The direct and indirect effects have opposite signs. Their mathematical combination cancels out explained variance, artificially inflating the residual error ($\sigma^2_{eY}$). This inflation bloats the standard errors, drastically reducing power and requiring a significantly larger sample size to detect the same $R^2_{\text{indirect}}$.
-* **Explore Mode (`type = "explore"`):** The default setting forces the engine to run the optimization twice—once under a consistent regime and once under a suppression regime. This provides the researcher with a complete bounding profile, defining both the best-case and worst-case sample size requirements based on path directionality.
+- **Consistent Models (`type = "consistent"`):** The direct effect ($c'$) and the indirect effect have the same sign. They cooperate to explain variance in $Y$, mathematically shrinking the residual error. This deflation of error variance tightens the standard errors of the paths, thereby increasing statistical power and lowering the required sample size.
+- **Suppression Models (`type = "suppression"`):** The direct and indirect effects have opposite signs. Their mathematical combination cancels out explained variance, artificially inflating the residual error ($\sigma^2_{eY}$). This inflation bloats the standard errors, drastically reducing power and requiring a significantly larger sample size to detect the same $R^2_{\text{indirect}}$.
+- **Explore Mode (`type = "explore"`):** The default setting forces the engine to run the optimization twice—once under a consistent regime and once under a suppression regime. This provides the researcher with a complete bounding profile, defining both the best-case and worst-case sample size requirements based on path directionality.
 
 ```{r}
 #' Wright Mediation Power Analysis (A-Priori)
