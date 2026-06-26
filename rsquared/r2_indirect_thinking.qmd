@@ -100,7 +100,7 @@ The algebraic validation scales to accommodate more complex mediation architectu
 
 In all configurations, the `wright_proof` function verifies that the final residual error block remains non-negative and that the total decomposed variance precisely matches the observed variance of the outcome. This procedure may be extended to even more complex models.
 
-### 4. R2_indirect
+## 4. R2_indirect
 
 #FUNCTION FOR ESTIMATING SPECIFIC VARIANCE EXPLAINED BY INDIRECT EFFECTS
 
@@ -208,19 +208,13 @@ r2_indirect <- function(model_fit, x_var, y_var, ..., n_boot = 500) {
 }
 ```
 
-EXAMPLE OF USAGE:
+###EXAMPLE OF USAGE: results \<- r2_indirect(model_fit = lavaan.mod.fit, x_var = "X", y_var = "Y", ###User defined paths (Specify any type of indirect association as defined in the fitted lavaan model)### Single = c("path_a", "path_b"), Parallel1 = c("path_a1", "path_b1"), Parallel2 = c("path_a2", "path_b2"), Serial = c("path_a", "path_b", "path_d"), n_boot = 500)
 
-################################################################################ 
+print(results, row.names = FALSE)
 
-###Function usage example! don't run!
+### 4.1 Applyng the function to different mediation models
 
-results \<- r2_indirect(model_fit = lavaan.mod.fit, x_var = "X", y_var = "Y", ###User defined paths (Specify any type of indirect association as defined in the fitted lavaan model)### Single = c("path_a", "path_b"), Parallel1 = c("path_a1", "path_b1"), Parallel2 = c("path_a2", "path_b2"), Serial = c("path_a", "path_b", "path_d"), n_boot = 500)
-
-print(results, row.names = FALSE) \###################################################################
-
-### 4.1. APPLYNG THE FUNCTION TO DIFFERENT MEDIATION MODELS
-
-### 4.1.1. Single Mediator Models
+### 4.1.1 Single Mediator Models
 
 ```{r}
 
@@ -390,11 +384,11 @@ wright_proof_single(fit4, dataset_name = "Dataset 4 (TYPE 2 SUPPRESSION, N = 600
 ################################################################################
 ```
 
-### 4.1.2. Two Parallel Mediators Models
+### 4.1.2 Models with Two Parallel Mediators
 
 ```{r}
 # ==============================================================================
-# DATA GENERATION: PARALLEL MEDIATORS
+# DATA GENERATION: TWO PARALLEL MEDIATORS
 # ==============================================================================
 
 simulate_data_parallel <- function(N, a1, b1, a2, b2, cp, res_cov, seed = 123) {
@@ -622,11 +616,11 @@ wright_proof_parallel(fitp5, "Dataset 5 (N=700, Type 3 Suppression)")
 
 ```
 
-### 4.1.3. Serial Mediators Models
+### 4.1.3 Models with Two Serial Mediators
 
 ```{r}
 # ==============================================================================
-# DATA GENERATION: SERIAL MEDIATORS
+# DATA GENERATION: TWO SERIAL MEDIATORS
 # ==============================================================================
 
 generate_serial_data <- function(N, a1, a2, d21, b1, b2, cp, seed = 17) {
@@ -903,9 +897,9 @@ wright_proof_serial(fits6, "Dataset 4 (N=700, Type 4 Suppression)")
 
 ## 5. A-Priori Power Analysis and Sensitivity Analysis based on $R^2_{\text{indirect}}$
 
-### 5.1. Theoretical Framework: Joint Significance Power
+### 5.1 Theoretical Framework: Joint Significance Power
 
-Statistical power in mediation analysis has historically been evaluated using individual path parameters rather than a consolidated effect size metric. This framework operationalizes power analysis directly through the **Joint Significance Criterion**. Under this approach, an indirect effect is deemed statistically significant if and only if every single constituent path coefficient within the structural chain ($X \rightarrow M \rightarrow Y$) is significantly different from zero at a designated alpha level ($\alpha$).
+Statistical power in mediation analysis has been evaluated using individual path coefficients rather than a consolidated effect size metric. This framework operationalizes power analysis directly through the **Joint Significance Criterion**. Under this approach, an indirect effect is deemed statistically significant if and only if every single constituent path coefficient within the structural chain ($X \rightarrow M \rightarrow Y$) is significantly different from zero at a designated alpha level ($\alpha$).
 
 Assuming the sampling distributions of the path coefficients are asymptotically independent, the joint power of the indirect pathway ($\text{Power}_{\text{joint}}$) is defined as the product of the individual statistical powers of its $k$ constituent paths:
 
@@ -913,7 +907,7 @@ $$\text{Power}_{\text{joint}} = \prod_{i=1}^{k} \text{Power}_i$$
 
 Because $\text{Power}_i \le 1$, the joint power decreases as the length of the mediation chain ($k\_paths$) increases. This mathematical reality requires sample size planning to account for the compounding erosion of power across multi-stage structures.
 
-### 5.2. Mathematical Boundary Profiles: Balanced vs. Bottleneck Scenarios
+### 5.2 Mathematical Boundary Profiles: Balanced vs. Bottleneck Scenarios
 
 A known mathematical property of any product-based effect size—including the unstandardized product $a \cdot b$, the standardized product $\beta_a \cdot \beta_b$, and the variance-accounted-for metric $R^2_{\text{indirect}}$—is that an infinite number of path combinations can yield the exact same global effect size. For instance, an $R^2_{\text{indirect}} = 0.01$ can result from two moderate paths or from one extremely large path paired with a near-zero path.
 
@@ -921,9 +915,9 @@ To resolve this indeterminacy without relying on arbitrary parameter assumptions
 
 - **The Balanced Scenario (Best Case):** This profile assumes that the underlying structural mechanism is perfectly symmetrical. The total variance explained by the indirect effect is distributed evenly across all $k$ paths. For a target indirect coefficient $K = \sqrt{R^2_{\text{indirect}}}$, the standardized coefficient for each path is calculated as: $$\beta_{\text{balanced}} = K^{\frac{1}{k}}$$ Because statistical power is a non-linear function maximized when the minimum effect size in a chain is as large as possible, the balanced scenario yields the highest possible joint power for a given $R^2_{\text{indirect}}$. It provides the lower bound for the required sample size ($N$).
 
-- **The Bottleneck Scenario (Worst Case):** This profile assumes extreme structural asymmetry. One path acts as a severe statistical restriction (the "bottleneck"), while the remaining $k-1$ paths are maximized up to a user-defined empirical ceiling ($\beta_{\text{max}}$, or `max_beta`). The bottleneck path coefficient ($\beta_{\text{min}}$) is formulated as: $$\beta_{\text{min}} = \frac{K}{(\beta_{\text{max}})^{k-1}}$$ This scenario represents the most conservative estimation layout. It identifies the maximum sample size required to detect the effect even if the mediation chain relies on a single highly fragile pathway.
+- **The Bottleneck Scenario (Worst Case):** This profile assumes extreme structural asymmetry. One path acts as a severe statistical restriction (the "bottleneck"), while the remaining $k-1$ paths are maximized up to a user-defined empirical ceiling ($\beta_{\text{max}}$, or `max_beta`). The bottleneck path coefficient ($\beta_{\text{min}}$) is formulated as: $$\beta_{\text{min}} = \frac{K}{(\beta_{\text{max}})^{k-1}}$$ This scenario represents the most conservative estimation layout. It identifies the minimum sample size required to detect the effect even if the mediation chain relies on a single highly fragile pathway.
 
-### 5.3. Error Variance Adjustments and Multi-Mediator Penalties
+### 5.3 Error Variance Adjustments and Multi-Mediator Penalties
 
 The power engine does not treat the outcome variable's residual variance as a static parameter. Following Wright’s path tracing rules, the residual variance of the outcome ($\sigma^2_{eY}$) is dynamically computed by subtracting all explained components from the total unit variance ($1$):
 
@@ -937,21 +931,44 @@ $$\text{VIF} = \frac{1}{1 - R^2_{\text{m\_overlap}}}$$
 
 This penalty inflates the standard errors of the path coefficients, capturing the loss of statistical precision that occurs when parallel mediators share overlapping variance ($R^2_{\text{m\_overlap}}$).
 
+### 5.4 The Empirical Guardrail (`max_beta`)
+
+In structural equation modeling, standardized path coefficients represent partial correlations or standardized regression weights. Mathematically, they are generally bounded by an absolute value of $1.0$. Furthermore, in empirical behavioral and social sciences, it is extremely rare for a single structural path to exceed $0.80$ without indicating severe theoretical redundancy or multicollinearity issues.
+
+When the algorithm computes the Bottleneck Scenario, it forces one path to be as large as possible to evaluate the worst-case structural asymmetry. Without a cap, the mathematical engine could theoretically maximize this path up to $0.99$ to satisfy the required $R^2_{\text{indirect}}$, resulting in an empirically absurd profile.
+
+To prevent this, the framework introduces the `max_beta` parameter as an empirical guardrail (default to $0.80$). It strictly restricts the maximum possible magnitude for any single constituent path in the mediation chain. If achieving a specific effect size requires a structural path that exceeds this limit, the algorithm halts and correctly flags the scenario as `"Unreachable"`, acknowledging that such a structure violates empirical plausibility.
+
 ------------------------------------------------------------------------
 
-### 6. Power Analysis for Single, Parallel, and Serial Mediation (`wright_power`)
+## 6. Power Analysis for Single, Parallel, and Serial Mediation (`wright_power`)
 
 ### 6.1 Algorithmic Mechanics
 
 The `wright_power` function computes the required sample size ($N$) to detect a target $R^2_{\text{indirect}}$ by executing a deterministic grid-search optimization across a range of $N \in [10, 5000]$.
 
-For each iteration of $N$, the function executes the following mathematical sequence: 1. Calculates the standard error for any given path coefficient $\beta$: $$\text{SE}_{\beta} = \sqrt{\frac{\sigma^2_{eY}}{N \cdot (1 - \beta^2)}} \cdot \sqrt{\text{VIF}}$$ 2. Computes the individual path power via the standard normal cumulative distribution function ($\Phi$): $$\text{Power}_{\beta} = \Phi\left(\frac{\beta}{\text{SE}_{\beta}} - z_{1 - \frac{\alpha}{2}}\right)$$ 3. Aggregates individual powers into the joint power metric for both the Balanced and Bottleneck profiles. 4. Identifies the exact sample sizes where the joint power crosses the user-specified threshold (`power_target`).
+For each iteration of $N$, the function executes the following mathematical sequence:
+
+1.  **Standard Error Calculation:** It calculates the standard error for any given path coefficient ($\beta$) based on the current sample size $N$ and the dynamic residual variance: $$\text{SE}_{\beta} = \sqrt{\frac{\sigma^2_{eY}}{N \cdot (1 - \beta^2)}} \cdot \sqrt{\text{VIF}}$$
+2.  **Individual Path Power:** It computes the statistical power for each distinct structural pathway using the standard normal cumulative distribution function ($\Phi$): $$\text{Power}_{\beta} = \Phi\left(\frac{\beta}{\text{SE}_{\beta}} - z_{1 - \frac{\alpha}{2}}\right)$$
+3.  **Joint Power Aggregation:** It aggregates the individual path powers into the final joint power metric using a multiplicative probability function:
+    - **For the Balanced Scenario:** $\text{Power}_{\text{joint}} = (\text{Power}_{\text{balanced}})^k$
+    - **For the Bottleneck Scenario:** $\text{Power}_{\text{joint}} = \text{Power}_{\text{min}} \cdot (\text{Power}_{\text{max}})^{k-1}$
+4.  **Identifying Required Sample Size:** The sequence iterates, increasing $N$, until it identifies the exact sample sizes where the calculated joint power successfully crosses the user-specified threshold (`power_target`).
 
 ### 6.2 Structural Adaptation (Single, Parallel, and Serial Models)
 
-The function adapts to different structural architectures via the execution arguments: \* **Single Mediation:** Evaluated by setting `k_paths = 2`, `r2_parallel = 0`, and `r2_m_overlap = 0`. \* **Parallel Mediation:** Incorporates the variance drainage of concurrent pathways via `r2_parallel` and handles the structural collinearity of competing mediators by setting `r2_m_overlap > 0`, which triggers the VIF penalty. \* **Serial Mediation:** Evaluated by scaling `k_paths` to $3$ or more structural steps. The mathematical engine automatically projects the compounding power degradation across the multi-stage chain.
+The function adapts to different structural architectures via specific execution arguments:
 
-Additionally, setting `type = "explore"` forces the engine to run the optimization twice: first under a *Consistent* regime (where $c'$ and the indirect effect have matching signs, adding variance to the model) and second under a *Suppression* regime (where opposing signs subtract variance, altering $\sigma^2_{eY}$ and shifting the required sample size).
+* **Single Mediation:** Evaluated by setting `k_paths = 2`, `r2_parallel = 0`, and `r2_m_overlap = 0`.
+* **Parallel Mediation:** Incorporates the variance drainage of concurrent pathways via `r2_parallel` and handles the structural collinearity of competing mediators by setting `r2_m_overlap > 0` (triggering the VIF penalty).
+* **Serial Mediation:** Evaluated by scaling `k_paths` to $3$ or more structural steps. The mathematical engine automatically projects the compounding power degradation across the multi-stage chain.
+
+Additionally, the algorithm also accounts for the directionality of the structural paths via the `type` parameter. Because the decomposition of variance includes a joint covariance block ($2c'K$), the signs of the effects dictate the final residual error of the outcome ($\sigma^2_{eY}$):
+
+* **Consistent Models (`type = "consistent"`):** The direct effect ($c'$) and the indirect effect have the same sign. They cooperate to explain variance in $Y$, mathematically shrinking the residual error. This deflation of error variance tightens the standard errors of the paths, thereby increasing statistical power and lowering the required sample size.
+* **Suppression Models (`type = "suppression"`):** The direct and indirect effects have opposite signs. Their mathematical combination cancels out explained variance, artificially inflating the residual error ($\sigma^2_{eY}$). This inflation bloats the standard errors, drastically reducing power and requiring a significantly larger sample size to detect the same $R^2_{\text{indirect}}$.
+* **Explore Mode (`type = "explore"`):** The default setting forces the engine to run the optimization twice—once under a consistent regime and once under a suppression regime. This provides the researcher with a complete bounding profile, defining both the best-case and worst-case sample size requirements based on path directionality.
 
 ```{r}
 #' Wright Mediation Power Analysis (A-Priori)
@@ -963,9 +980,10 @@ Additionally, setting `type = "explore"` forces the engine to run the optimizati
 #' @param type "explore" (default), "consistent", or "suppression".
 #' @param k_paths Number of multiplicative paths in the indirect block (default = 2).
 #' @param c_prime Expected direct effect coefficient (default = 0.20).
-#' @param r2_m_overlap Variance of the target mediator explained by other parallel mediators (VIF penalty).
-#'                     Tip: For 2 mediators with a correlation of 0.30, enter the squared value (0.30^2 = 0.09).
-#'                     Tip: For 3+ mediators, enter the multiple R2 of the target regressed on the others.
+#' @param r2_m_overlap: 
+#' Variance of the target mediator explained by other parallel mediators (VIF penalty).
+#' Tip: For 2 mediators with a correlation of 0.30, enter the squared value (0.30^2 = 0.09).
+#' Tip: For 3+ mediators, enter the multiple R2 of the target regressed on the others.
 #' @param r2_parallel Variance of Y explained by other parallel mediators.
 #' @param r2_covariates Variance of Y explained by external control variables.
 #' @param power_target Desired joint statistical power threshold (default = 0.80).
@@ -1106,11 +1124,15 @@ wright_power(r2_indirect = 0.000729,
 
 ## 7. Sensitivity Analysis for the MDES (`wright_sensitivity`)
 
-### 7.1. Algorithmic Mechanics
+### 7.1 Algorithmic Mechanics
 
-When the sample size ($N$) is predetermined by resource constraints, retrospective design limitations, or existing datasets, the analytical objective shifts from finding $N$ to defining the **Minimum Detectable Effect Size (MDES)**. The `wright_sensitivity` function executes this optimization by reversing the grid-search process.
+When the sample size ($N$) is predetermined by resource constraints, retrospective design limitations, or existing datasets, the analytical objective shifts from finding $N$ to defining the **Minimum Detectable Effect Size (MDES)**. The `wright_sensitivity` function executes this by reverse-engineering the power calculation through a step-by-step search procedure:
 
-The function loops through an incremental array of variance proportions ($R^2_{\text{indirect}} \in [0.0001, 0.8000]$). For each discrete variance value, it extracts the corresponding path coefficients under both Balanced and Bottleneck constraints, determines the resulting outcome error variance, and evaluates the achieved joint power. The MDES is defined as the absolute lowest $R^2_{\text{indirect}}$ value that achieves the target joint power given the fixed sample size $N$.
+1.  **The Grid Search:** The function initiates a loop, starting from a near-zero indirect effect ($R^2_{\text{indirect}} = 0.0001$) and incrementally increasing it step-by-step up to ($R^2_{\text{indirect}} = 0.8000$).
+2.  **Parameter Extraction:** For each discrete variance value in the grid, the algorithm calculates exactly what the underlying path coefficients ($\beta$) would need to be under both the Balanced and Bottleneck structural profiles.
+3.  **Error Variance Computation:** Using Wright’s decomposition, it calculates the dynamic residual variance of the outcome ($\sigma^2_{eY}$) associated with that specific structural configuration, accounting for any suppression or consistency effects.
+4.  **Power Evaluation:** Using the fixed sample size $N$ provided by the user, it calculates the joint statistical power that would be achieved for that specific $R^2_{\text{indirect}}$.
+5.  **Identifying the MDES:** The sequence iterates until the exact moment the calculated joint power crosses the user's specified threshold (e.g., $0.80$). The loop then stops, and that specific $R^2_{\text{indirect}}$ value is returned as the MDES. It represents the absolute smallest variance proportion the study is statistically equipped to detect reliably.
 
 ### 7.2 Structural Interpretation of Outputs
 
