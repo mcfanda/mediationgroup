@@ -19,7 +19,20 @@ In structural equation modeling (SEM) and mediation analysis, quantifying the ma
 
 ### 1.2 Sewall Wright’s Path Tracing Rules
 
-To establish a formalized effect size, this framework utilizes Sewall Wright’s Path Tracing Rules. Wright established that the total variance of an outcome variable, or the covariance between variables, can be exactly decomposed into the sum of the distinct structural paths connecting them. Following these rules, the total observed variance of the dependent variable ($\sigma^2_Y$) is partitioned into additive components, including direct effects, indirect effects, shared covariances, and residual errors.
+To derive a formalized effect size, this framework leverages Sewall Wright’s seminal path tracing rules. These foundational principles sates that the total variance of an outcome variable can be exactly decomposed into the sum of the structural pathways connecting the variable to itself, either through direct, indirect, or common causal tracks. 
+
+In a standard single-mediator structure where an independent variable ($X$) affects the dependent variable ($Y$) directly via path $c'$ and indirectly through a mediator ($M$) via paths $a$ and $b$, Wright's rules partition the total observed variance of the outcome ($\sigma^2_Y$) into the following additive components:
+
+$$\sigma^2_Y = {c'}^2 \sigma^2_X + a^2 b^2 \sigma^2_X + 2 a b c' \sigma^2_X + b^2 \sigma^2_{e_M} + \sigma^2_{e_Y}$$
+
+Where:
+* ${c'}^2 \sigma^2_X$ represents the variance uniquely explained by the direct effect of $X$.
+* $a^2 b^2 \sigma^2_X$ represents the variance uniquely explained by the indirect pathway ($X \rightarrow M \rightarrow Y$).
+* $2 a b c' \sigma^2_X$ captures the unanalyzed covariance between the direct and indirect paths arising from their shared upstream cause ($X$).
+* $b^2 \sigma^2_{e_M}$ represents the variance transmitted to $Y$ from the unexplained residual of the mediator ($e_M$).
+* $\sigma^2_{e_Y}$ is the residual error variance intrinsic to $Y$.
+
+By systematically accounting for every linear component, this exact decomposition provides the mathematical foundation necessary to isolate the unique variance explained ($R^2$) by the indirect pathway without confounding or double-counting effects across multi-stage structures.
 
 ### 1.3 The Coefficient of Determination ($R^2$) as an Effect Size
 
