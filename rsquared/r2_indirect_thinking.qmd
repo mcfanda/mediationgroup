@@ -9,17 +9,21 @@ format:
     toc-depth: 3
     theme: cosmo
     highlight-style: github
+  pdf:
+    toc: true
+    number-sections: true
+    keep-tex: false    
 ---
 
 ## 1. Introduction to the Effect Size Metric
 
 ### 1.1 The Need for a Standardized Effect Size Metric in Mediation
 
-In structural equation modeling (SEM) and mediation analysis, quantifying the magnitude of an indirect effect relies primarily on the product of standardized path coefficients ($\beta_a \cdot \beta_b$). Although this approach standardizes the effect by expressing it in standard deviation units, the resulting product functions as a metric of relative linear change rather than a bounded proportion of shared variance. Consequently, it does not directly reflect the operational contribution of the mediation pathway to the total variance of the outcome variable. This limitation makes it difficult to evaluate the practical significance of the mechanism within an absolute, variance-accounted-for framework that is directly comparable to traditional effect sizes .
+In structural equation modeling (SEM) and mediation analysis, quantifying the magnitude of an indirect effect relies primarily on the product of standardized path coefficients ($\beta_a \cdot \beta_b$). Although this approach standardizes the effect by expressing it in standard deviation units, the resulting product functions as a metric of relative linear change rather than a bounded proportion of shared variance. Consequently, it does not directly reflect the operational contribution of the mediation pathway to the total variance of the outcome variable. This limitation makes it difficult to evaluate the practical significance of the mechanism within an absolute, variance-accounted-for framework that may be directly comparable to traditional effect sizes .
 
 ### 1.2 Sewall Wright’s Path Tracing Rules
 
-To derive a formalized effect size, this framework leverages Sewall Wright’s seminal path tracing rules. These foundational principles state that the total variance of an outcome variable can be exactly decomposed into the sum of the structural pathways connecting the variable to itself, either through direct, indirect, or common causal tracks.
+To derive a formalized effect size, this framework leverages Sewall Wright’s (1934) seminal path tracing rules. These foundational principles state that the total variance of an outcome variable can be exactly decomposed into the sum of the structural pathways connecting the variable to itself, either through direct, indirect, or common causal tracks.
 
 In a standard single-mediator structure where an independent variable ($X$) affects the dependent variable ($Y$) directly via path $c'$ and indirectly through a mediator ($M$) via paths $a$ and $b$, Wright's rules partition the total observed variance of the outcome ($\sigma^2_Y$) into the following additive components:
 
@@ -106,9 +110,476 @@ The algebraic validation scales to accommodate more complex mediation architectu
 - **Two Parallel Mediators:** The variance of the outcome variable is partitioned into 10 distinct blocks. This structure accounts for the unanalyzed residual covariance between parallel mediators ($2 \cdot b_1 \cdot b_2 \cdot \text{Cov}(e_{M1}, e_{M2})$) and the multi-way joint structural covariances.
 - **Two Serial Mediators:** The structure expands to 15 distinct components, tracking the sequential variance flow through the internal path connecting the mediators ($d_{21}$).
 
-In all configurations, the `wright_proof` function verifies that the final residual error block remains non-negative and that the total decomposed variance precisely matches the observed variance of the outcome. This procedure may be extended to even more complex models. This scalable algebraic proof confirms that the proposed variance decomposition maintains strict mathematical consistency regardless of the model's structural configuration or the presence of suppression dynamics. Having established this theoretical foundation, the framework now transitions from algebraic validation to empirical application, introducing the `r2_indirect` function and its operationalization across diverse mediation architectures.
+In all configurations, the `wright_proof` function verifies that the final residual error block remains non-negative and that the total decomposed variance precisely matches the observed variance of the outcome. This procedure may be extended to even more complex models. This scalable algebraic proof confirms that the proposed variance decomposition maintains strict mathematical consistency regardless of the model's structural configuration or the presence of suppression dynamics. 
+Having established this theoretical foundation for variance decomposition, the framework now transitions to evaluating the formal boundaries of the indirect effect size index. The following section develops the mathematical conditions governing the boundedness of $R^2_{\text{indirect}}$, seamlessly bridging analytical proofs with systematic empirical validation
 
-## 4. The $R^2_{\text{indirect}}$ Function (`r2_indirect`)
+------------------------------------------------------------------------
+
+## 4. Boundedness of $R^2_{\text{indirect}}$: Formal Theorem and Empirical Validation
+
+```{r}
+#| label: setup
+#| include: false
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(patchwork)
+
+theme_set(
+  theme_minimal(base_size = 12) +
+    theme(
+      plot.title    = element_text(face = "bold", size = 13),
+      plot.subtitle = element_text(size = 11, color = "grey40"),
+      axis.title    = element_text(size = 11)
+    )
+)
+```
+
+### 4.1 Index Definition
+As previously specified, for a simple mediation model with unstandardized path coefficients
+$a$, $b$, $c'$, predictor variance $\sigma^2_X$, and outcome variance $\sigma^2_Y$,
+the index is defined as:
+
+$$R^2_{\text{indirect}} = \frac{(a \cdot b)^2 \cdot \sigma^2_X}{\sigma^2_Y}$$
+
+The total variance of the outcome decomposes exactly into five components
+(Wright, 1934):
+
+$$\sigma^2_Y = \underbrace{(c')^2\sigma^2_X}_{\text{pure direct}} +
+              \underbrace{(ab)^2\sigma^2_X}_{\text{pure indirect}} +
+              \underbrace{2c'ab\sigma^2_X}_{\text{joint covariance}} +
+              \underbrace{b^2\sigma^2_{e_M}}_{\text{mediator error}} +
+              \underbrace{\sigma^2_{e_Y}}_{\text{outcome error}}$$
+
+
+### 4.2 Theorem: Boundedness Condition
+### Theorem 1 (Necessary and Sufficient Condition for $R^2_{\text{indirect}} \leq 1$)
+
+Let a simple mediation model be given with structural equations:
+
+$$M = aX + e_M, \qquad Y = c'X + bM + e_Y$$
+
+under standard OLS assumptions ($\text{Cov}(X, e_M) = \text{Cov}(X, e_Y) =
+\text{Cov}(e_M, e_Y) = 0$). Then:
+
+$$R^2_{\text{indirect}} \leq 1 \iff (c')^2 + 2c'ab \geq
+-\frac{b^2\sigma^2_{e_M} + \sigma^2_{e_Y}}{\sigma^2_X}$$
+
+In an equivalent form, the condition is satisfied **if and only if**:
+
+$$(c' + ab)^2\sigma^2_X + b^2\sigma^2_{e_M} + \sigma^2_{e_Y} \geq (ab)^2\sigma^2_X$$
+
+that is, $\sigma^2_Y \geq (ab)^2\sigma^2_X$.
+
+### 4.3 Formal Proof
+
+**Step 1 — Expression of the condition.**
+
+By definition, $R^2_{\text{indirect}} \leq 1$ is equivalent to:
+
+$$\frac{(ab)^2\sigma^2_X}{\sigma^2_Y} \leq 1
+\iff (ab)^2\sigma^2_X \leq \sigma^2_Y$$
+
+**Step 2 — Substitution of the decomposition of** $\sigma^2_Y$.
+
+From the five-block decomposition:
+
+$$\sigma^2_Y = (c' + ab)^2\sigma^2_X + b^2\sigma^2_{e_M} + \sigma^2_{e_Y}$$
+
+The condition becomes:
+
+$$(ab)^2\sigma^2_X \leq (c' + ab)^2\sigma^2_X + b^2\sigma^2_{e_M} + \sigma^2_{e_Y}$$
+
+**Step 3 — Algebraic simplification.**
+
+Subtracting $(ab)^2\sigma^2_X$ from both sides:
+
+$$0 \leq \left[(c' + ab)^2 - (ab)^2\right]\sigma^2_X + b^2\sigma^2_{e_M} + \sigma^2_{e_Y}$$
+
+Expanding the square of the binomial:
+
+$$(c' + ab)^2 - (ab)^2 = (c')^2 + 2c'ab$$
+
+We therefore obtain:
+
+$$\boxed{0 \leq \left[(c')^2 + 2c'ab\right]\sigma^2_X + b^2\sigma^2_{e_M} + \sigma^2_{e_Y}}$$
+
+Which is equivalent to the condition stated in Theorem 1.
+
+### 4.4 Corollary: Standardized Coefficients
+### Corollary 1 (Sufficient Condition in Standardized Terms)
+
+If the standardized path coefficients satisfy $|b^*| \leq 1$, then
+$R^2_{\text{indirect}} \leq 1$.
+
+**Proof.**
+
+The standardized coefficient of $b$ is defined as:
+
+$$b^* = b \cdot \frac{\sigma_M}{\sigma_Y}$$
+
+From which:
+
+$$b^{*2} = b^2 \cdot \frac{\sigma^2_M}{\sigma^2_Y}
+         = b^2 \cdot \frac{a^2\sigma^2_X + \sigma^2_{e_M}}{\sigma^2_Y}$$
+
+The condition $|b^*| \leq 1$ implies $b^2\sigma^2_M \leq \sigma^2_Y$,
+which means $b^2(a^2\sigma^2_X + \sigma^2_{e_M}) \leq \sigma^2_Y$.
+
+Since $(ab)^2\sigma^2_X \leq b^2(a^2\sigma^2_X + \sigma^2_{e_M})$
+(as the second term also includes $b^2\sigma^2_{e_M} \geq 0$), we have:
+
+$$(ab)^2\sigma^2_X \leq b^2\sigma^2_M \leq \sigma^2_Y$$
+
+which is precisely the condition of Theorem 1.
+
+### 4.5 Empirical Validation
+
+### 4.5.1 Grid Search over the Parameter Space
+
+The following code performs a systematic search over a dense grid of parameter
+values, verifying in what proportion of cases $R^2_{\text{indirect}}$ exceeds 1
+and which condition on the standardized coefficients is associated with the
+violations.
+
+```{r}
+#| label: grid-search
+#| cache: true
+
+# -----------------------------------------------------------------------
+# Main function
+# -----------------------------------------------------------------------
+
+compute_r2_indirect <- function(a, b, cp,
+                                 var_X  = 1,
+                                 var_eM = 1,
+                                 var_eY = 1) {
+  var_M   <- a^2 * var_X + var_eM
+  var_Y   <- (cp + a * b)^2 * var_X + b^2 * var_eM + var_eY
+  r2      <- (a * b)^2 * var_X / var_Y
+  a_std   <- a * sqrt(var_X) / sqrt(var_M)
+  b_std   <- b * sqrt(var_M) / sqrt(var_Y)
+
+  data.frame(
+    a = a, b = b, cp = cp,
+    var_eM = var_eM, var_eY = var_eY,
+    var_Y  = var_Y,
+    r2     = r2,
+    a_std  = a_std,
+    b_std  = b_std,
+    exceeds     = r2 > 1,
+    suppression = sign(cp) != sign(a * b)
+  )
+}
+
+# -----------------------------------------------------------------------
+# Parameter grid
+# -----------------------------------------------------------------------
+
+params <- expand.grid(
+  a      = seq(0.1, 3.0, by = 0.2),
+  b      = seq(0.1, 3.0, by = 0.2),
+  cp     = seq(-3.0, 3.0, by = 0.3),
+  var_eM = c(0.1, 0.5, 1.0),
+  var_eY = c(0.1, 0.5, 1.0)
+)
+
+results <- mapply(
+  FUN      = compute_r2_indirect,
+  a        = params$a,
+  b        = params$b,
+  cp       = params$cp,
+  var_eM   = params$var_eM,
+  var_eY   = params$var_eY,
+  SIMPLIFY = FALSE
+) |> dplyr::bind_rows()
+
+# -----------------------------------------------------------------------
+# Summary
+# -----------------------------------------------------------------------
+
+n_total  <- nrow(results)
+n_exceed <- sum(results$exceeds)
+max_r2   <- max(results$r2)
+
+cat("=================================================================\n")
+cat("  BOUNDEDNESS TEST — R²_indirect\n")
+cat("=================================================================\n\n")
+cat(sprintf("Tested parameter combinations      : %s\n",
+            format(n_total, big.mark = ",")))
+cat(sprintf("Violations (R²_indirect > 1)       : %s  (%.2f%%)\n",
+            format(n_exceed, big.mark = ","),
+            100 * n_exceed / n_total))
+cat(sprintf("Maximum observed R²_indirect       : %.4f\n\n", max_r2))
+
+supp <- results |> dplyr::filter(suppression)
+cat("--- Suppression conditions (cp and ab of opposite signs) ---\n")
+cat(sprintf("Total suppression cases            : %s\n",
+            format(nrow(supp), big.mark = ",")))
+cat(sprintf("Violations under suppression       : %s  (%.2f%%)\n",
+            format(sum(supp$exceeds), big.mark = ","),
+            100 * mean(supp$exceeds)))
+cat(sprintf("Max R²_indirect under suppression  : %.4f\n\n",
+            max(supp$r2)))
+
+# Verification of the necessary condition
+viol <- results |> dplyr::filter(exceeds)
+no_viol_with_small_std <- viol |>
+  dplyr::filter(abs(a_std) <= 1, abs(b_std) <= 1)
+
+cat("--- Corollary 1 Verification ---\n")
+cat(sprintf("|b*| > 1 in ALL violation cases            : %s\n",
+            ifelse(all(abs(viol$b_std) > 1), "CONFIRMED", "FALSIFIED")))
+cat(sprintf("Violations with |a*| ≤ 1 AND |b*| ≤ 1      : %d\n",
+            nrow(no_viol_with_small_std)))
+
+# Realistic range
+realistic <- results |>
+  dplyr::filter(abs(a_std) <= 0.6, abs(b_std) <= 0.6)
+cat(sprintf("\nRealistic range (|a*|,|b*| ≤ 0.6)\n"))
+cat(sprintf("  Cases tested   : %s\n", format(nrow(realistic), big.mark = ",")))
+cat(sprintf("  Violations     : %d  (%.2f%%)\n",
+            sum(realistic$exceeds), 100 * mean(realistic$exceeds)))
+```
+
+### 4.5.2 Plot 1 — Parameter Space Map
+
+The following plot shows $R^2_{\text{indirect}}$ as a function of $a$ and $c'$
+(with $b = 1.5$, $\sigma^2_{e_M} = \sigma^2_{e_Y} = 0.5$).
+The red line indicates the $R^2 = 1$ boundary.
+
+```{r}
+#| label: fig-heatmap
+#| fig-cap: "Map of R²_indirect in the parameter space (a, c'). The red line indicates the R² = 1 boundary. The bottom-right region corresponds to boundedness violations."
+#| fig-width: 8
+#| fig-height: 6
+
+# Fine grid for the plot
+b_fix  <- 1.5
+eM_fix <- 0.5
+eY_fix <- 0.5
+
+plot_grid <- expand.grid(
+  a  = seq(0.01, 3.0, length.out = 200),
+  cp = seq(-3.0, 3.0, length.out = 200)
+) |>
+  dplyr::mutate(
+    b     = b_fix,
+    var_Y = (cp + a * b)^2 + b^2 * eM_fix + eY_fix,
+    r2    = (a * b)^2 / var_Y,
+    r2_vis = pmin(r2, 3)
+  )
+
+
+ggplot(plot_grid, aes(x = a, y = cp)) +
+  geom_tile(aes(fill = r2_vis)) +
+  geom_contour(aes(z = r2), breaks = 1,
+               color = "red", linewidth = 1.2) +
+  scale_fill_gradientn(
+    colors = c("navy", "steelblue", "white", "orange", "firebrick"),
+    values = scales::rescale(c(0, 0.5, 1, 1.5, 3)),
+    name   = expression(R^2[indirect] ~ "(cap 3)")
+  ) +
+  annotate("text", x = 2.5, y = -2.4,
+           label = "Violation\nregion",
+           color = "red", fontface = "bold", size = 3.8,
+           hjust = 0.5) +
+  annotate("text", x = 0.8, y = 2.0,
+           label = "Always\nbounded",
+           color = "white", fontface = "bold", size = 3.8,
+           hjust = 0.5) +
+  labs(
+    title    = expression(R^2[indirect] ~ "in the parameter space"),
+    subtitle = bquote(b == .(b_fix) ~~ sigma^2[eM] == .(eM_fix) ~~ sigma^2[eY] == .(eY_fix)),
+    x        = "Path coefficient a",
+    y        = "Direct effect c'"
+  )
+```
+
+### 4.5.3 Plot 2 — Distribution under Suppression
+
+```{r}
+#| label: fig-distribution
+#| fig-cap: "Distribution of R²_indirect under suppression conditions. The red dashed line indicates the threshold value R² = 1."
+#| fig-width: 7
+#| fig-height: 5
+
+pct_exceed_supp <- 100 * mean(supp$r2 > 1)
+
+supp |>
+  dplyr::mutate(r2_vis = pmin(r2, 6)) |>
+  ggplot(aes(x = r2_vis)) +
+  geom_histogram(bins = 70, fill = "steelblue",
+                 color = "white", alpha = 0.85) +
+  geom_vline(xintercept = 1, color = "red",
+             linewidth = 1.2, linetype = "dashed") +
+  annotate("text", x = 1.15, y = Inf,
+           label = expression(R^2 == 1),
+           color = "red", hjust = 0, vjust = 1.8, size = 4) +
+  labs(
+    title    = expression("Distribution of" ~ R^2[indirect] ~ "under suppression conditions"),
+    subtitle = sprintf("%.1f%% of cases exceed R² = 1", pct_exceed_supp),
+    x        = expression(R^2[indirect] ~ "(truncated at 6)"),
+    y        = "Count"
+  )
+```
+
+### 4.5.4 Plot 3 — Standardized Coefficients and Violations
+
+```{r}
+#| label: fig-standardized
+#| fig-cap: "Relationship between |b*| and R²_indirect (left) and distribution of the maximum standardized coefficient by violation status (right)."
+#| fig-width: 13
+#| fig-height: 5
+
+# Sample for the scatter plot
+set.seed(42)
+sample_df <- results |>
+  dplyr::sample_n(min(8000, nrow(results))) |>
+  dplyr::mutate(
+    stato  = ifelse(exceeds, "Violation (R² > 1)", "Bounded (R² ≤ 1)"),
+    r2_vis = pmin(r2, 5),
+    max_std = pmax(abs(a_std), abs(b_std))
+  )
+
+p1 <- ggplot(sample_df, aes(x = abs(b_std), y = r2_vis, color = stato)) +
+  geom_point(alpha = 0.25, size = 1.2) +
+  geom_hline(yintercept = 1, color = "red",
+             linewidth = 1, linetype = "dashed") +
+  geom_vline(xintercept = 1, color = "darkorange",
+             linewidth = 1, linetype = "dashed") +
+  scale_color_manual(values = c("steelblue", "firebrick")) +
+  annotate("text", x = 0.3, y = 4.5,
+           label = "|b*| = 1", color = "darkorange",
+           angle = 90, size = 3.5, vjust = -0.3) +
+  labs(
+    title  = expression(R^2[indirect] ~ "vs" ~ "|b*|"),
+    x      = expression("|b*| (standardized coefficient b)"),
+    y      = expression(R^2[indirect] ~ "(truncated at 5)"),
+    color  = NULL
+  ) +
+  theme(legend.position = "bottom") +
+  xlim(0, 7)
+
+results_hist <- results |>
+  dplyr::mutate(
+    stato   = ifelse(exceeds, "Violation (R² > 1)", "Bounded (R² ≤ 1)"),
+    max_std = pmin(pmax(abs(a_std), abs(b_std)), 6)
+  )
+
+p2 <- ggplot(results_hist, aes(x = max_std, fill = stato, color = stato)) +
+  geom_density(alpha = 0.45, linewidth = 0.8) +
+  geom_vline(xintercept = 1, color = "black",
+             linewidth = 1.2, linetype = "dashed") +
+  scale_fill_manual(values  = c("steelblue", "firebrick")) +
+  scale_color_manual(values = c("steelblue", "firebrick")) +
+  annotate("rect", xmin = 0, xmax = 0.6,
+           ymin = -Inf, ymax = Inf,
+           alpha = 0.08, fill = "forestgreen") +
+  annotate("text", x = 0.3, y = Inf,
+           label = "Realistic\nrange",
+           color = "forestgreen", vjust = 1.5, size = 3.2,
+           fontface = "italic") +
+  labs(
+    title  = expression("Distribution of" ~ max("|a*|", "|b*|")),
+    x      = expression(max("|a*|", "|b*|") ~ "(truncated at 6)"),
+    y      = "Density",
+    fill   = NULL, color = NULL
+  ) +
+  theme(legend.position = "bottom") +
+  xlim(0, 6)
+
+p1 + p2
+```
+
+### 4.5.5 Plot 4 — Boundary Surface
+
+The following plot shows the region of the $(a, b)$ space where a violation is
+**mathematically possible** (for some value of $c'$ with an opposite sign to $ab$),
+with $\sigma^2_{e_M} = \sigma^2_{e_Y} = 0.5$.
+
+```{r}
+#| label: fig-boundary
+#| fig-cap: "Region of the (a, b) space where R²_indirect > 1 is possible. The color indicates the critical value of c' at the boundary. The gray area corresponds to the always bounded region."
+#| fig-width: 7
+#| fig-height: 6
+
+eM_b <- 0.5
+eY_b <- 0.5
+
+boundary_grid <- expand.grid(
+  a = seq(0.1, 3.0, length.out = 150),
+  b = seq(0.1, 3.0, length.out = 150)
+) |>
+  dplyr::mutate(
+    residuals     = b^2 * eM_b + eY_b,
+    discriminant  = (a * b)^2 - residuals,
+    viol_possible = discriminant > 0,
+    cp_boundary   = dplyr::if_else(viol_possible,
+                                   -a * b - sqrt(pmax(discriminant, 0)),
+                                   NA_real_)
+  )
+
+ggplot(boundary_grid, aes(x = a, y = b)) +
+  geom_tile(aes(fill = cp_boundary)) +
+  geom_contour(aes(z = as.numeric(viol_possible)),
+               breaks = 0.5, color = "black",
+               linewidth = 1.5) +
+  scale_fill_gradientn(
+    colors  = c("steelblue", "white", "firebrick"),
+    na.value = "grey88",
+    name    = expression("critical c'")
+  ) +
+  annotate("text", x = 2.2, y = 2.3,
+           label = "Violation\npossible",
+           fontface = "bold", color = "white", size = 4) +
+  annotate("text", x = 0.6, y = 0.5,
+           label = "Always\nbounded",
+           fontface = "bold", color = "grey40", size = 4) +
+  labs(
+    title    = "Boundary surface of the bounded region",
+    subtitle = expression(sigma^2[eM] == 0.5 ~~ sigma^2[eY] == 0.5),
+    x        = "Path coefficient a",
+    y        = "Path coefficient b"
+  )
+```
+
+### 4.6 Summary of Results
+
+The results of the empirical validation confirm the analytical implications
+of Theorem 1 and Corollary 1:
+
+1. **Corollary 1 is empirically confirmed**: in none of the
+   `r format(nrow(results), big.mark=",")` tested cases is a
+   violation observed with $|b^*| \leq 1$.
+
+2. **$|b^*| > 1$ is a necessary condition for violation**: 100% of the
+   `r format(sum(results$exceeds), big.mark=",")` violation cases
+   exhibit $|b^*| > 1$.
+
+3. **Within the realistic empirical range** ($|a^*|, |b^*| \leq 0.6$),
+   corresponding to the vast majority of models in the social and behavioral
+   sciences, **no violations are observed**.
+
+4. Violations are concentrated in extreme suppression scenarios where the
+   standardized coefficients exceed unity — a condition that inherently
+   signals structural instability of the estimated model.
+
+Therefore, $R^2_{\text{indirect}}$ is **practically bounded** within $[0, 1]$
+for all mediation models applied in the behavioral, social, and health sciences.
+
+Having established this theoretical foundation and verified the mathematical boundaries of the index, the framework now transitions from analytical validation to computational implementation. The following section introduces the `r2_indirect` function, detailing its algorithmic structure and demonstrating its operationalization across single, parallel, and serial mediation architectures.
+
+---
+
+### References
+
+Wright, S. (1934). The method of path coefficients. *Annals of Mathematical
+Statistics*, *5*(3), 161–215.
+
+------------------------------------------------------------------------
+
+## 5. The $R^2_{\text{indirect}}$ Function (`r2_indirect`)
 
 #FUNCTION FOR ESTIMATING SPECIFIC VARIANCE EXPLAINED BY INDIRECT EFFECTS
 
@@ -220,9 +691,9 @@ r2_indirect <- function(model_fit, x_var, y_var, ..., n_boot = 500) {
 
 print(results, row.names = FALSE)
 
-### 4.1 Applyng the function to different mediation models
+### 5.1 Applyng the function to different mediation models
 
-### 4.1.1 Single Mediator Models
+### 5.1.1 Single Mediator Models
 
 ```{r}
 
@@ -391,9 +862,10 @@ wright_proof_single(fit4, dataset_name = "Dataset 4 (TYPE 1 SUPPRESSION, N = 600
 wright_proof_single(fit4, dataset_name = "Dataset 4 (TYPE 2 SUPPRESSION, N = 600)")
 ################################################################################
 ```
+
 As demonstrated by the single-mediator outputs, the function accurately isolates the specific indirect variance while the accompanying algebraic proofs confirm a zero reconstruction error, even under opposing suppression conditions. Building upon this baseline architecture, the methodological framework can be reliably extended to accommodate simultaneous, competing pathways, as illustrated in the parallel mediation models below.
 
-### 4.1.2 Models with Two Parallel Mediators
+### 5.1.2 Models with Two Parallel Mediators
 
 ```{r}
 # ==============================================================================
@@ -624,9 +1096,10 @@ wright_proof_parallel(fitp5, "Dataset 5 (N=700, Type 3 Suppression)")
 ################################################################################
 
 ```
+
 The evaluation of parallel models highlights the function's capacity to partition variance accurately across multiple indirect pathways while simultaneously accounting for the shared, unobserved residual covariances between mediators. This precise isolation of variance components is equally critical when mediators operate interdependently rather than concurrently, leading directly to the serial mediation structures examined next.
 
-### 4.1.3 Models with Two Serial Mediators
+### 5.1.3 Models with Two Serial Mediators
 
 ```{r}
 # ==============================================================================
@@ -904,11 +1377,12 @@ wright_proof_serial(fits5, "Dataset 3 (N=700, Type 3 Suppression)")
 wright_proof_serial(fits6, "Dataset 4 (N=700, Type 4 Suppression)")
 ################################################################################
 ```
+
 The successful application of the 15-block decomposition to serial structures validates the metric's scalability across multi-stage causal chains. Having established a mathematically sound effect size index capable of handling single, parallel, and serial architectures, the framework must now address the inferential requirements of prospective sample size planning and sensitivity analysis.
 
-## 5. A-Priori Power Analysis and Sensitivity Analysis based on $R^2_{\text{indirect}}$
+## 6. A-Priori Power Analysis and Sensitivity Analysis based on $R^2_{\text{indirect}}$
 
-### 5.1 Theoretical Framework: Joint Significance Power
+### 6.1 Theoretical Framework: Joint Significance Power
 
 Statistical power in mediation analysis has been evaluated using individual path coefficients rather than a consolidated effect size metric. This framework operationalizes power analysis directly through the **Joint Significance Criterion**. Under this approach, an indirect effect is deemed statistically significant if and only if every single constituent path coefficient within the structural chain ($X \rightarrow M \rightarrow Y$) is significantly different from zero at a designated alpha level ($\alpha$).
 
@@ -916,10 +1390,9 @@ Assuming the sampling distributions of the path coefficients are asymptotically 
 
 $$\text{Power}_{\text{joint}} = \prod_{i=1}^{k} \text{Power}_i$$
 
-Because $\text{Power}_i \le 1$, the joint power decreases as the length of the mediation chain ($k\_paths$) increases. This mathematical reality requires sample size planning to account for the compounding erosion of power across multi-stage structures.
-Since joint power relies on the multiplicative probability of multiple independent statistical tests, the exact same aggregate effect size can emerge from theoretically infinite configurations of path coefficients. To resolve this parameter indeterminacy for reliable sample size planning, it is necessary to establish rigid mathematical boundary conditions, as detailed in the subsequent section.
+Because $\text{Power}_i \le 1$, the joint power decreases as the length of the mediation chain ($k\_paths$) increases. This mathematical reality requires sample size planning to account for the compounding erosion of power across multi-stage structures. Since joint power relies on the multiplicative probability of multiple independent statistical tests, the exact same aggregate effect size can emerge from theoretically infinite configurations of path coefficients. To resolve this parameter indeterminacy for reliable sample size planning, it is necessary to establish rigid mathematical boundary conditions, as detailed in the subsequent section.
 
-### 5.2 Mathematical Boundary Profiles: Balanced vs. Bottleneck Scenarios
+### 6.2 Mathematical Boundary Profiles: Balanced vs. Bottleneck Scenarios
 
 A known mathematical property of any product-based effect size—including the unstandardized product $a \cdot b$, the standardized product $\beta_a \cdot \beta_b$, and the variance-accounted-for metric $R^2_{\text{indirect}}$—is that an infinite number of path combinations can yield the exact same global effect size. For instance, an $R^2_{\text{indirect}} = 0.01$ can result from two moderate paths or from one extremely large path paired with a near-zero path.
 
@@ -927,12 +1400,9 @@ To resolve this indeterminacy without relying on arbitrary parameter assumptions
 
 - **The Balanced Scenario (Best Case):** This profile assumes that the underlying structural mechanism is perfectly symmetrical. The total variance explained by the indirect effect is distributed evenly across all $k$ paths. For a target indirect coefficient $K = \sqrt{R^2_{\text{indirect}}}$, the standardized coefficient for each path is calculated as: $$\beta_{\text{balanced}} = K^{\frac{1}{k}}$$ Because statistical power is a non-linear function maximized when the minimum effect size in a chain is as large as possible, the balanced scenario yields the highest possible joint power for a given $R^2_{\text{indirect}}$. It provides the lower bound for the required sample size ($N$).
 
-- **The Bottleneck Scenario (Worst Case - Mathematical Stress Test):** This profile assumes extreme structural asymmetry. It does not represent a realistic empirical model, but rather a mathematical "stress test" to find the absolute lower bound of the required effect. One path acts as a severe statistical restriction (the "bottleneck", or implied minimum beta), while the remaining $k-1$ paths are artificially maximized up to a user-defined empirical ceiling (`max_beta`, default to 0.80). The bottleneck path coefficient ($\beta_{\text{min}}$) is formulated as: 
-$$\beta_{\text{min}} = \frac{K}{(\beta_{\text{max}})^{k-1}}$$ 
-By forcing all other paths to their theoretical limit (where a coefficient of 0.80 would border on tautology in social sciences), this scenario identifies the minimum possible strength required from the weakest link in the chain to still achieve the target power.
-By calculating both the balanced maximum and the bottleneck minimum, these profiles establish a definitive bounding range for sample size requirements without relying on arbitrary parameter guessing. However, precise power estimation also requires dynamic accounting of residual variances and structural penalties, which are integrated into the mathematical engine as follows.
+- **The Bottleneck Scenario (Worst Case - Mathematical Stress Test):** This profile assumes extreme structural asymmetry. It does not represent a realistic empirical model, but rather a mathematical "stress test" to find the absolute lower bound of the required effect. One path acts as a severe statistical restriction (the "bottleneck", or implied minimum beta), while the remaining $k-1$ paths are artificially maximized up to a user-defined empirical ceiling (`max_beta`, default to 0.80). The bottleneck path coefficient ($\beta_{\text{min}}$) is formulated as: $$\beta_{\text{min}} = \frac{K}{(\beta_{\text{max}})^{k-1}}$$ By forcing all other paths to their theoretical limit (where a coefficient of 0.80 would border on tautology in social sciences), this scenario identifies the minimum possible strength required from the weakest link in the chain to still achieve the target power. By calculating both the balanced maximum and the bottleneck minimum, these profiles establish a definitive bounding range for sample size requirements without relying on arbitrary parameter guessing. However, precise power estimation also requires dynamic accounting of residual variances and structural penalties, which are integrated into the mathematical engine as follows.
 
-### 5.3 Error Variance Adjustments and Multi-Mediator Penalties
+### 6.3 Error Variance Adjustments and Multi-Mediator Penalties
 
 The power engine does not treat the outcome variable's residual variance as a static parameter. Following Wright’s path tracing rules, the residual variance of the outcome ($\sigma^2_{eY}$) is dynamically computed by subtracting all explained components from the total unit variance ($1$):
 
@@ -944,10 +1414,9 @@ Furthermore, when evaluating a target mediator embedded within a parallel mediat
 
 $$\text{VIF} = \frac{1}{1 - R^2_{\text{m\_overlap}}}$$
 
-This penalty inflates the standard errors of the path coefficients, capturing the loss of statistical precision that occurs when parallel mediators share overlapping variance ($R^2_{\text{m\_overlap}}$).
-Incorporating these dynamic variance adjustments ensures that standard errors reflect the true statistical environment of the targeted pathway, appropriately penalizing for mediator collinearity. To prevent the stress-test scenarios from pushing theoretical path coefficients into mathematically possible but empirically absurd ranges, an absolute structural limit must be enforced.
+This penalty inflates the standard errors of the path coefficients, capturing the loss of statistical precision that occurs when parallel mediators share overlapping variance ($R^2_{\text{m\_overlap}}$). Incorporating these dynamic variance adjustments ensures that standard errors reflect the true statistical environment of the targeted pathway, appropriately penalizing for mediator collinearity. To prevent the stress-test scenarios from pushing theoretical path coefficients into mathematically possible but empirically absurd ranges, an absolute structural limit must be enforced.
 
-### 5.4 The Empirical Guardrail (`max_beta`)
+### 6.4 The Empirical Guardrail (`max_beta`)
 
 In structural equation modeling, standardized path coefficients represent partial correlations or standardized regression weights. Mathematically, they are generally bounded by an absolute value of $1.0$. Furthermore, in empirical behavioral and social sciences, it is extremely rare for a single structural path to exceed $0.80$ without indicating severe theoretical redundancy or multicollinearity issues.
 
@@ -959,9 +1428,9 @@ The enforcement of this empirical guardrail preserves the ecological validity of
 
 ------------------------------------------------------------------------
 
-## 6. Power Analysis for Single, Parallel, and Serial Mediation (`wright_power`)
+## 7. Power Analysis for Single, Parallel, and Serial Mediation (`wright_power`)
 
-### 6.1 Algorithmic Mechanics
+### 7.1 Algorithmic Mechanics
 
 The `wright_power` function computes the required sample size ($N$) to detect a target $R^2_{\text{indirect}}$ by executing a deterministic grid-search optimization across a range of $N \in [10, 5000]$.
 
@@ -974,7 +1443,7 @@ For each iteration of $N$, the function executes the following mathematical sequ
     - **For the Bottleneck Scenario:** $\text{Power}_{\text{joint}} = \text{Power}_{\text{min}} \cdot (\text{Power}_{\text{max}})^{k-1}$
 4.  **Identifying Required Sample Size:** The sequence iterates, increasing $N$, until it identifies the exact sample sizes where the calculated joint power successfully crosses the user-specified threshold (`power_target`).This deterministic grid-search ensures absolute computational precision in identifying the minimal $N$ required to achieve the desired joint statistical power. The exact parametrization of this search, however, fundamentally shifts depending on the targeted structural configuration, requiring specific architectural adaptations.
 
-### 6.2 Structural Adaptation (Single, Parallel, and Serial Models)
+### 7.2 Structural Adaptation (Single, Parallel, and Serial Models)
 
 The function adapts to different structural architectures via specific execution arguments:
 
@@ -1175,13 +1644,14 @@ wright_power(r2_indirect = 0.000729,
              max_beta = 0.80)
 
 ```
+
 The execution of these models demonstrates the algorithm's flexibility in managing single, parallel, and serial configurations while meticulously accounting for the profound statistical impact of consistent versus suppression dynamics. Ultimately, integrating the exact algebraic decomposition of $R^2_{\text{indirect}}$ with this boundary-profile power analysis provides researchers with a comprehensive, mathematically validated toolkit for standardizing effect sizes and rigorous sample size planning in structural mediation.
 
 ------------------------------------------------------------------------
 
-## 7. Sensitivity Analysis for the MDES (`wright_sensitivity`)
+## 8. Sensitivity Analysis for the MDES (`wright_sensitivity`)
 
-### 7.1 Algorithmic Mechanics
+### 8.1 Algorithmic Mechanics
 
 When the sample size ($N$) is predetermined by resource constraints, retrospective design limitations, or existing datasets, the analytical objective shifts from finding $N$ to defining the **Minimum Detectable Effect Size (MDES)**. The `wright_sensitivity` function executes this by reverse-engineering the power calculation through a step-by-step search procedure:
 
@@ -1191,19 +1661,16 @@ When the sample size ($N$) is predetermined by resource constraints, retrospecti
 4.  **Power Evaluation:** Using the fixed sample size $N$ provided by the user, it calculates the joint statistical power that would be achieved for that specific $R^2_{\text{indirect}}$.
 5.  **Identifying the MDES:** The sequence iterates until the exact moment the calculated joint power crosses the user's specified threshold (e.g., $0.80$). The loop then stops, and that specific $R^2_{\text{indirect}}$ value is returned as the MDES. It represents the absolute smallest variance proportion the study is statistically equipped to detect reliably. By iteratively reversing the power logic, the algorithm shifts the analytical focus from prospective planning to retrospective evaluation. This ensures that even under strict empirical or resource constraints, researchers can define mathematically precise boundaries for their theoretical expectations.
 
-### 7.2 Structural Interpretation of Outputs
+### 8.2 Structural Interpretation of Outputs
 
 The output of `wright_sensitivity` provides a clear assessment of a study's empirical threshold by deconstructing the required effect into specific path coefficients:
 
 | Scenario | Implied MIN Beta | Implied MAX Beta | Required R2 (MDES) | Interpretation |
-|:---|:---|:---|:---|:---|
+|:--------------|:--------------|:--------------|:--------------|:--------------|
 | **Balanced** | *Calculated* | *Identical to MIN* | *Value* | The absolute lowest variance proportion the study can detect under optimal, symmetrical path conditions. All paths share the exact same required coefficient. |
 | **Bottleneck** | *Calculated* | *Fixed (e.g., 0.80)* | *Value* | The minimum variance proportion required if the model relies on a highly asymmetric, weak pathway. The MAX Beta shows the artificial ceiling applied to $k-1$ paths, while the MIN Beta shows the required strength of the weakest link. |
 
-**Understanding MIN vs. MAX Beta:**
-The inclusion of the "Implied MIN Beta" and "Implied MAX Beta" columns serves to ground the global target parameter ($R^2$) in local, empirical reality. 
-* In the **Balanced** scenario, MIN and MAX betas are identical, showing the required coefficient if the effect is perfectly distributed. 
-* In the **Bottleneck** scenario, the MAX beta is deliberately pushed to the limit (e.g., 0.80) to conduct a mathematical stress test. Researchers should evaluate the Implied MIN Beta: if achieving the required $R^2$ demands a MIN Beta that is implausibly large (e.g., $> 0.50$) even when all other paths are operating at absolute theoretical maximums, the study is severely underpowered for practical applications.
+**Understanding MIN vs. MAX Beta:** The inclusion of the "Implied MIN Beta" and "Implied MAX Beta" columns serves to ground the global target parameter ($R^2$) in local, empirical reality. \* In the **Balanced** scenario, MIN and MAX betas are identical, showing the required coefficient if the effect is perfectly distributed. \* In the **Bottleneck** scenario, the MAX beta is deliberately pushed to the limit (e.g., 0.80) to conduct a mathematical stress test. Researchers should evaluate the Implied MIN Beta: if achieving the required $R^2$ demands a MIN Beta that is implausibly large (e.g., $> 0.50$) even when all other paths are operating at absolute theoretical maximums, the study is severely underpowered for practical applications.
 
 If a calculated MDES scenario returns `"Unreachable"`, it signifies that the structural parameters, background covariates, or collinearity penalties drain so much variance from the system that it is mathematically impossible to achieve the target power at that sample size.
 
@@ -1403,9 +1870,10 @@ wright_sensitivity(n = 136,
                    max_beta = 0.80)
 
 ```
+
 The implementation of the `wright_sensitivity` function thereby bridges the gap between available sample resources and statistical realism. However, applying these sensitivity and power metrics to multi-stage serial models introduces a fundamental mathematical paradox, requiring a deeper examination of how variance structurally behaves as causal paths multiply.
 
-## 8. The Multiplicative Nature of Serial Mediation and Variance Erosion
+## 9. The Multiplicative Nature of Serial Mediation and Variance Erosion
 
 In structural equation modeling and path analysis, the overall indirect effect of a serial mediation chain is calculated as the product of the individual path coefficients. When utilizing standardized coefficients ($\beta$), which typically range between -1.0 and 1.0, this multiplicative property inherently leads to a geometric attenuation of the overall effect size. This mathematical necessity causes a phenomenon that can be defined as "variance erosion."
 
@@ -1425,7 +1893,7 @@ To empirically demonstrate the phenomenon of variance erosion and validate the a
 
 The logic of this simulated demonstration is articulated in four sequential phases: 1. **Dataset Generation:** Creation of synthetic data matrices based on structural equation models with fixed standardized parameters ($\beta = 0.30$ for each local path, $c' = 0.20$ for the direct effect). 2. **Model Estimation:** Fitting the serial mediation models using the estimation algorithm provided by the `lavaan` package. 3. **Quantification of the Global Effect (**$R^2_{indirect}$): Extraction of the standardized parameters and calculation of the variance explained by the serial effect. 4. **Critical Power/Sensitivity Analysis:** Evaluation of the discrepancy between the local significance of the individual segments and the magnitude of the global construct.
 
-### 8.1 Simulated Processes and Empirical Evidence of Variance Erosion (point 1 to 3)
+### 9.1 Simulated Processes and Empirical Evidence of Variance Erosion (point 1 to 3)
 
 The following code chunk executes the comparative demonstration for three structural configurations: a simple mediation ($k=2$), a two-mediator serial chain ($k=3$), and a complex three-mediator chain ($k=4$).
 
@@ -1521,9 +1989,10 @@ cat("\n--> FUNCTION REPORT: K = 4 (Three Serial Mediators)\n")
 print(res_k4, row.names = FALSE)
 
 ```
+
 The outputs generated by these simulated datasets provide concrete empirical evidence of variance erosion. Despite holding the local structural parameters entirely constant ($\beta = 0.50$), the mere addition of sequential mediation steps geometrically diminishes the measurable global effect. This mathematical inevitability sets the stage for a critical methodological trap in sample size planning.
 
-### 8.2 Showing the Power/Sensitivity Analysis Paradox in Serial Models
+### 9.2 Showing the Power/Sensitivity Analysis Paradox in Serial Models
 
 The empirical demonstration above highlights a critical methodological trap: as the number of paths ($k$) increases, the global indirect $R^2$ drastically erodes, even when the underlying local structural paths remain robust.
 
@@ -1535,7 +2004,7 @@ To resolve this paradox, power and sensitivity analyses in serial mediation must
 
 The following script demonstrates how to appropriately evaluate sample size and detectable effect sizes using the `wright_power()` and `wright_sensitivity()` functions across the three simulated models ($k=2$, $k=3$, $k=4$).
 
-### 8.2.1 The Price of Complexity in a-priori power analysis for serial mediation models: Local vs. "Global" Perspectives
+### 9.2.1 The Price of Complexity in a-priori power analysis for serial mediation models: Local vs. "Global" Perspectives
 
 When scaling up a serial mediation chain from *k* = 2 to *k* = 4 structural paths, researchers face a mathematical trade-off between **local mechanism strength** and **"global" explanatory power**. To fully understand how variance attenuation affects your study design, the `WrightMediation` engine allows you to simulate power from two distinct perspectives:
 
@@ -1600,9 +2069,10 @@ cat("\n--> POWER ANALYSIS: K = 4 (Three Serial Mediators)\n")
 pow_k4 <- wright_power(target_beta_path = 0.35, k_paths = 4, alpha = 0.05, power = 0.80)
 
 ```
+
 These comparative scenarios definitively expose the power analysis paradox. They mathematically demonstrate that researchers must anchor their statistical planning to the implied local mechanisms (Scenario B) rather than an arbitrary global variance target (Scenario A). Failing to do so forces the algorithm to compensate for variance erosion by demanding astronomically large, empirically impossible sample sizes.
 
-### 8.2.2 Sensitivity Profiles: Standard vs. Boundary Perspectives
+### 9.2.2 Sensitivity Profiles: Standard vs. Boundary Perspectives
 
 When running a sensitivity analysis using `wright_sensitivity` with `type = "explore"`, the sample size (*N*) is held constant, and the engine calculates the Minimum Detectable Effect Size (MDES)—expressed as both the Required Global Indirect *R*² and the Implied Local Betas—across both **Consistent** and **Suppression** mediation configurations simultaneously. To understand how model complexity interacts with your sample, we evaluate sensitivity from two operational perspectives:
 
@@ -1669,4 +2139,5 @@ cat("\n>>> Sensitivity for k = 4 <<<\n")
 wright_sensitivity(n = 50000, k_paths = 4, type = "explore")
 
 ```
-Ultimately, this comprehensive evaluation across both standard and extreme sample boundaries validates the structural integrity of the framework. By illuminating the mathematical realities of variance erosion and providing precise diagnostic tools for both prospective power and retrospective sensitivity, this analytical approach ensures that researchers can confidently design, evaluate, and interpret complex mediation models while remaining strictly within the bounds of empirical plausibility.
+
+This comprehensive evaluation across both standard and extreme sample boundaries validates the structural integrity of the framework. By illuminating the mathematical realities of variance erosion and providing precise diagnostic tools for both prospective power and retrospective sensitivity, this analytical approach ensures that researchers can confidently design, evaluate, and interpret complex mediation models while remaining strictly within the bounds of empirical plausibility.
