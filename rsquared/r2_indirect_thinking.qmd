@@ -5,14 +5,15 @@ author: "mediationgourp"
 date: "2026-06-24"
 format:
   html:
+    embed-resources: true
     toc: true
     toc-depth: 3
     theme: cosmo
     highlight-style: github
-  pdf:
+typst:
     toc: true
-    number-sections: true
-    keep-tex: false    
+    toc-depth: 3
+    number-sections: true    
 ---
 
 ## 1. Introduction to the Effect Size Metric
@@ -118,7 +119,6 @@ In all configurations, the `wright_proof` function verifies that the final resid
 
 ```{r}
 #| label: setup
-#| include: false
 library(ggplot2)
 library(dplyr)
 library(tidyr)
@@ -383,7 +383,9 @@ ggplot(plot_grid, aes(x = a, y = cp)) +
     subtitle = bquote(b == .(b_fix) ~~ sigma^2[eM] == .(eM_fix) ~~ sigma^2[eY] == .(eY_fix)),
     x        = "Path coefficient a",
     y        = "Direct effect c'"
-  )
+  ) -> p_heatmap
+
+print(p_heatmap)
 ```
 
 ### 4.5.3 Plot 2 — Distribution under Suppression
@@ -411,7 +413,9 @@ supp |>
     subtitle = sprintf("%.1f%% of cases exceed R² = 1", pct_exceed_supp),
     x        = expression(R^2[indirect] ~ "(truncated at 6)"),
     y        = "Count"
-  )
+  ) -> p_dist
+
+print(p_dist)
 ```
 
 ### 4.5.4 Plot 3 — Standardized Coefficients and Violations
@@ -480,6 +484,8 @@ p2 <- ggplot(results_hist, aes(x = max_std, fill = stato, color = stato)) +
   xlim(0, 6)
 
 p1 + p2
+
+print(p1 + p2)
 ```
 
 ### 4.5.5 Plot 4 — Boundary Surface
@@ -529,7 +535,9 @@ ggplot(boundary_grid, aes(x = a, y = b)) +
     subtitle = expression(sigma^2[eM] == 0.5 ~~ sigma^2[eY] == 0.5),
     x        = "Path coefficient a",
     y        = "Path coefficient b"
-  )
+  ) -> p_boundary
+
+print(p_boundary)
 ```
 
 ### 4.6 Summary of Results
