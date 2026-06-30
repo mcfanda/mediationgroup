@@ -10,17 +10,18 @@ format:
     toc-depth: 3
     theme: cosmo
     highlight-style: github
-typst:
+  typst:
     toc: true
     toc-depth: 3
-    number-sections: true    
+    toc-title: "Index"
+    number-sections: true
 ---
 
 ## 1. Introduction to the Effect Size Metric
 
 ### 1.1 The Need for a Standardized Effect Size Metric in Mediation
 
-In structural equation modeling (SEM) and mediation analysis, quantifying the magnitude of an indirect effect relies primarily on the product of standardized path coefficients ($\beta_a \cdot \beta_b$). Although this approach standardizes the effect by expressing it in standard deviation units, the resulting product functions as a metric of relative linear change rather than a bounded proportion of shared variance. Consequently, it does not directly reflect the operational contribution of the mediation pathway to the total variance of the outcome variable. This limitation makes it difficult to evaluate the practical significance of the mechanism within an absolute, variance-accounted-for framework that may be directly comparable to traditional effect sizes .
+In structural equation modeling (SEM) and mediation analysis, quantifying the magnitude of an indirect effect relies primarily on the product of standardized path coefficients ($\beta_a \cdot \beta_b$). Although this approach standardizes the effect by expressing it in standard deviation units, the resulting product functions as a metric of relative linear change rather than a bounded proportion of shared variance. Consequently, it does not directly reflect the operational contribution of the mediation pathway to the total variance of the outcome variable. This limitation makes it difficult to evaluate the practical significance of the mechanism within an absolute, variance-accounted-for framework that may be directly comparable to traditional effect sizes.
 
 ### 1.2 Sewall Wright’s Path Tracing Rules
 
@@ -236,7 +237,7 @@ The following code performs a systematic search over a dense grid of parameter v
 
 ```{r}
 #| label: grid-search
-#| cache: true
+#| cache: false
 
 # -----------------------------------------------------------------------
 # Main function
@@ -482,8 +483,6 @@ p2 <- ggplot(results_hist, aes(x = max_std, fill = stato, color = stato)) +
   ) +
   theme(legend.position = "bottom") +
   xlim(0, 6)
-
-p1 + p2
 
 print(p1 + p2)
 ```
